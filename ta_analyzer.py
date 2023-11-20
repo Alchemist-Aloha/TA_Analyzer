@@ -1,6 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from ta_analyzer_ui import Ui_MainWindow  # Import the generated class from the generated file
+from ta_analyzer_core import *
 
 class MyMainWindow(QMainWindow):
     def __init__(self):
