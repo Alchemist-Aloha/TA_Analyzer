@@ -4,12 +4,14 @@ from scipy.stats import norm
 import lmfit
 from tqdm import tqdm
 import xarray as xr
+'''#load glotaran
 from glotaran.optimization.optimize import optimize
 from glotaran.io import load_model
 from glotaran.io import load_parameters
 from glotaran.io import save_dataset
 from glotaran.io.prepare_dataset import prepare_time_trace_dataset
 from glotaran.project.scheme import Scheme
+'''
 
 # load all and average the matrix
 def mat_avg(name, file_num):
@@ -650,7 +652,7 @@ class tamatrix_importer:
         t = self.tatime
         lmodel = lmfit.Model(multiexp_func)
         params = params_init(num_of_exp)
-        t1 = find_closest_value([1],tamatrix.tatime)
+        t1 = find_closest_value([1],self.tatime)
         tamax = np.max(np.abs(self.bgcorr[:,t1]))
         wlmax = np.argmax(np.abs(self.bgcorr[:,t1]))
         y = self.bgcorr[wlmax,:]
