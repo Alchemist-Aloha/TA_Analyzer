@@ -27,18 +27,10 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="4,4,1">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0">
-         <item>
-          <widget class="QGraphicsView" name="graphicsView_2"/>
-         </item>
-        </layout>
+        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch=""/>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0">
-         <item>
-          <widget class="QGraphicsView" name="graphicsView_3"/>
-         </item>
-        </layout>
+        <layout class="QHBoxLayout" name="horizontalLayout_8" stretch=""/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0">
@@ -59,11 +51,7 @@
         <number>0</number>
        </property>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
-          <widget class="QGraphicsView" name="graphicsView_4"/>
-         </item>
-        </layout>
+        <layout class="QHBoxLayout" name="horizontalLayout_6"/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_9">
@@ -136,7 +124,7 @@
      <x>0</x>
      <y>0</y>
      <width>1117</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

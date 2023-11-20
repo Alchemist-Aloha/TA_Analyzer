@@ -1,5 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from ta_analyzer_ui import Ui_MainWindow  # Import the generated class from the generated file
 from ta_analyzer_core import *
 
@@ -12,7 +13,9 @@ class MyMainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         # Connect signals and slots or customize UI elements here
-
+        
+        
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MyMainWindow()
