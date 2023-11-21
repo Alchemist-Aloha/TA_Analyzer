@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import pyqtgraph as pg
 from ta_analyzer_ui import Ui_MainWindow  # Import the generated class from the generated file
 from ta_analyzer_core import *
 

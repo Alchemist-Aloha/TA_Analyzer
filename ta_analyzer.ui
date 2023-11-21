@@ -2,18 +2,33 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1117</width>
-    <height>825</height>
+    <width>1920</width>
+    <height>1080</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <widget class="QWidget" name="horizontalLayoutWidget_3">
     <property name="geometry">
      <rect>
@@ -23,17 +38,17 @@
       <height>681</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="3,2">
+    <layout class="QHBoxLayout" name="horizontalLayout_main" stretch="3,2">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3" stretch="4,4,1">
+      <layout class="QVBoxLayout" name="verticalLayout_l" stretch="4,4,1">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch=""/>
+        <layout class="QHBoxLayout" name="horizontalLayout_lt"/>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_8" stretch=""/>
+        <layout class="QHBoxLayout" name="horizontalLayout_lm"/>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_lb" stretch="0">
          <item>
           <widget class="QLabel" name="label">
            <property name="text">
@@ -46,25 +61,25 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="8,8,1,1">
+      <layout class="QVBoxLayout" name="verticalLayout_r" stretch="8,8,1,1">
        <property name="spacing">
         <number>0</number>
        </property>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6"/>
+        <layout class="QHBoxLayout" name="horizontalLayout_rt"/>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
+        <layout class="QHBoxLayout" name="horizontalLayout_table">
          <item>
-          <widget class="QTableWidget" name="tableWidget_2"/>
+          <widget class="QTableWidget" name="tableWidget_l"/>
          </item>
          <item>
-          <widget class="QTableWidget" name="tableWidget"/>
+          <widget class="QTableWidget" name="tableWidget_r"/>
          </item>
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_10">
+        <layout class="QHBoxLayout" name="horizontalLayout_button1">
          <item>
           <widget class="QPushButton" name="pushButton_7">
            <property name="text">
@@ -89,7 +104,7 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <layout class="QHBoxLayout" name="horizontalLayout_button2">
          <item>
           <widget class="QPushButton" name="pushButton_6">
            <property name="text">
@@ -117,16 +132,6 @@
      </item>
     </layout>
    </widget>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1117</width>
-     <height>22</height>
-    </rect>
-   </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
