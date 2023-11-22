@@ -71,33 +71,36 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_table">
          <item>
-          <widget class="QTableWidget" name="tableWidget_l"/>
+          <widget class="QTableWidget" name="table_misc"/>
          </item>
          <item>
-          <widget class="QTableWidget" name="tableWidget_r"/>
+          <widget class="QTableWidget" name="table_fit"/>
          </item>
         </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_button1">
          <item>
-          <widget class="QPushButton" name="pushButton_7">
+          <widget class="QPushButton" name="button_bgcorr">
            <property name="text">
-            <string>PushButton</string>
+            <string>bgcorr</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_8">
+          <widget class="QPushButton" name="button_tcorr">
            <property name="text">
-            <string>PushButton</string>
+            <string>tcorr</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_9">
+          <widget class="QSpinBox" name="mat_selector"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="button_glotaran">
            <property name="text">
-            <string>PushButton</string>
+            <string>glotaran</string>
            </property>
           </widget>
          </item>
