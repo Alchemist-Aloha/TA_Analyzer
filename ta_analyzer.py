@@ -37,7 +37,6 @@ class MyMainWindow(QMainWindow):
         color_map = pg.colormap.get('CET-I2')
         self.colorbar = pg.ColorBarItem(values = (-0.01,0.01))
         self.colorbar.setColorMap(color_map)
-        
         self.canvasc.addItem(self.colorbar, colspan=1) 
     
     def init_buttons(self):  
@@ -65,19 +64,21 @@ class MyMainWindow(QMainWindow):
             #self.plot_data()
             
     def plot_contour(self):
-        Y, X = np.meshgrid(self.obj_ta.tatime, self.obj_ta.tawavelength)
-               
+        y = np.insert(self.obj_ta.tatime,0,self.obj_ta.tatime[0])
+        x = np.insert(self.obj_ta.tawavelength,0,self.obj_ta.tawavelength[0])
+        Y, X = np.meshgrid(y, x)       
         self.contour_plot.clear()
-        
-        # Create the contour plot using PlotWidget
+        self.contour_plot_data = pg.PColorMeshItem(X,Y,self.obj_ta.tamatrix)
+        self.contour_plot.addItem(self.contour_plot_data)
+        '''# Create the contour plot using ImageItem()
         self.contour_plot_data = pg.ImageItem()
         self.contour_plot.addItem(self.contour_plot_data)
         self.contour_plot_data.setImage(self.obj_ta.tamatrix,autoLevels=True)
         #self.contour_plot_data.setRect(np.min(self.obj_ta.tawavelength), np.min(self.obj_ta.tatime), 
         #                                                np.max(self.obj_ta.tawavelength)-np.min(self.obj_ta.tawavelength), np.max(self.obj_ta.tatime)-np.min(self.obj_ta.tatime))
-        self.contour_plot.setXRange(min(self.obj_ta.tawavelength), max(self.obj_ta.tawavelength))
+        self.contour_plot.setXRange(min(self.obj_ta.tawavelength), max(self.obj_ta.tawavelength))'''
         # Set labels and colormap
-        self.contour_plot.setLabel('left', "Time (point)")
+        self.contour_plot.setLabel('left', "Time (ps)")
         self.contour_plot.setLabel('bottom', "Wavelength (nm)")
         self.contour_plot.setAspectLocked(False)
         #self.contour_plot.showAxis('right')
