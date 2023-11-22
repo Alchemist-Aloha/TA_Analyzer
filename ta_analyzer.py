@@ -11,9 +11,19 @@ class MyMainWindow(QMainWindow):
         # Set up the UI from the generated file
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
+        self.setWindowTitle("Transient Absorption Analyzer")
         # Connect signals and slots or customize UI elements here
         
+        # Initialize PlotWidgets
+        self.canvasc = pg.GraphicsLayoutWidget()# contour
+        self.canvass = pg.GraphicsLayoutWidget()# spectra
+        self.canvask = pg.GraphicsLayoutWidget()# kinetic traces
+        self.canvasc.setBackground('white')
+        self.canvass.setBackground('white')
+        self.canvask.setBackground('white')
+        self.ui.horizontalLayout_rt.addWidget(self.canvasc)
+        self.ui.horizontalLayout_lt.addWidget(self.canvass)   
+        self.ui.horizontalLayout_lm.addWidget(self.canvask)  
         
         
 if __name__ == "__main__":
