@@ -101,6 +101,13 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_button1">
           <item>
+           <widget class="QPushButton" name="button_load">
+            <property name="text">
+             <string>load</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="button_bgcorr">
             <property name="text">
              <string>bgcorr</string>
@@ -115,7 +122,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="mat_selector"/>
+           <widget class="QComboBox" name="mat_selector"/>
           </item>
           <item>
            <widget class="QPushButton" name="button_glotaran">
@@ -129,25 +136,28 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_button2">
           <item>
-           <widget class="QPushButton" name="pushButton_6">
+           <widget class="QPushButton" name="button_spectra">
             <property name="text">
              <string>PushButton</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_4">
+           <widget class="QPushButton" name="button_traces">
             <property name="text">
              <string>PushButton</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_5">
+           <widget class="QPushButton" name="button_fit">
             <property name="text">
              <string>PushButton</string>
             </property>
            </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="trace_selector"/>
           </item>
          </layout>
         </item>
