@@ -4,15 +4,12 @@ from scipy.stats import norm
 import lmfit
 from tqdm import tqdm
 import xarray as xr
-'''#load glotaran
-from glotaran.optimization.optimize import optimize
+'''from glotaran.optimization.optimize import optimize
 from glotaran.io import load_model
 from glotaran.io import load_parameters
 from glotaran.io import save_dataset
 from glotaran.io.prepare_dataset import prepare_time_trace_dataset
-from glotaran.project.scheme import Scheme
-'''
-
+from glotaran.project.scheme import Scheme'''
 # load all and average the matrix
 def mat_avg(name, file_num):
     first_array = np.loadtxt(name+str(1))-np.loadtxt(name+str(1))
@@ -29,8 +26,11 @@ def mat_avg(name, file_num):
 
 # load TaTime0
 def load_tatime(file_name):
-    time_total = np.loadtxt(file_name)[:, 0]
-    tatime = time_total[time_total != 0]
+    #time_total = np.loadtxt(file_name)[:, 0]
+    #tatime = time_total[time_total != 0]
+    tatime = np.loadtxt(file_name)[:,0]
+    idx = np.loadtxt(file_name).shape[1]-2
+    tatime = tatime[:idx]
     return tatime
 
 # load TaWavelength0
@@ -54,7 +54,7 @@ class load_spectra:
             self.tawavelength0 = load_tawavelength(self.file_inp+'1')
             # average the matrix
             self.tamatrix_avg, self.mat_array = mat_avg(self.file_inp, num_spec)
-        self.fig_k, self.ax_k = plt.subplots()
+        
 
     # plot 1ps spectrum
     def get_1ps(self):
@@ -69,34 +69,24 @@ class load_spectra:
         return self.spec_1ps
 
     # plot multiple parallel traces to see photodamage
-    def get_traces(self, wavelength):
-        self.trace_array = np.zeros((len(self.tatime0)+1, self.num_spec))
+    def get_traces(self, wavelength,disable_plot = None):
+        self.fig_k, self.ax_k = plt.subplots()
+        self.trace_array = np.zeros((len(self.tatime0), self.num_spec))
         diff = np.abs(self.tawavelength0 - wavelength)
         pt = np.argmin(diff)
         if self.num_spec == 1:
             self.trace_avg = self.tamatrix_avg[pt,2:]
-            try:
-                self.ax_k.plot(np.log(self.tatime0), self.trace_avg,
+            self.ax_k.plot(np.log(self.tatime0), self.trace_avg,
                             label=f'{wavelength} nm trace')
-            except:
-                self.ax_k.plot(
-                    np.log(self.tatime0), self.trace_avg[:-1], label=f'{wavelength} nm trace')  
         else:           
             for i in range(self.num_spec):
                 self.trace_array[:, i] = self.mat_array[pt, 2:, i]
-                try:
-                    self.ax_k.plot(
-                        np.log(self.tatime0), self.trace_array[:, i], label=f'{wavelength} nm trace {i+1}')
-                except:
-                    self.ax_k.plot(
-                        np.log(self.tatime0), self.trace_array[:-1, i], label=f'{wavelength} nm trace {i+1}')
-            self.trace_avg = self.tamatrix_avg[pt, 2:]
-            try:
-                self.ax_k.plot(np.log(self.tatime0), self.trace_avg,
-                            label=f'{wavelength} nm trace averaged')
-            except:
                 self.ax_k.plot(
-                    np.log(self.tatime0), self.trace_avg[:-1], label=f'{wavelength} nm trace averaged')
+                        np.log(self.tatime0), self.trace_array[:, i], label=f'{wavelength} nm trace {i+1}')
+
+            self.trace_avg = self.tamatrix_avg[pt, 2:]
+            self.ax_k.plot(np.log(self.tatime0), self.trace_avg,
+                            label=f'{wavelength} nm trace averaged')
         self.ax_k.legend()
         self.ax_k.set_xlabel('Time (Log scale ps)')
         self.ax_k.set_ylabel('ΔOD')
