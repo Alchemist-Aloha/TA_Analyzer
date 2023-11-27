@@ -55,6 +55,8 @@ class MyMainWindow(QMainWindow):
 
         if self.file_path:
             self.file_path = str(self.file_path[0])
+            self.file_name = os.path.basename(self.file_path)
+            self.file_name = self.file_name.split('.')[0]
             print("Selected file:", self.file_path)
             self.ui.label.setText("Current data file: "+self.file_path)
             self.dir = os.path.dirname(self.file_path)
@@ -70,6 +72,7 @@ class MyMainWindow(QMainWindow):
         self.contour_plot.clear()
         self.contour_plot_data = pg.PColorMeshItem(X,Y,self.obj_ta.tamatrix)
         self.contour_plot.addItem(self.contour_plot_data)
+        
         '''# Create the contour plot using ImageItem()
         self.contour_plot_data = pg.ImageItem()
         self.contour_plot.addItem(self.contour_plot_data)
@@ -77,6 +80,7 @@ class MyMainWindow(QMainWindow):
         #self.contour_plot_data.setRect(np.min(self.obj_ta.tawavelength), np.min(self.obj_ta.tatime), 
         #                                                np.max(self.obj_ta.tawavelength)-np.min(self.obj_ta.tawavelength), np.max(self.obj_ta.tatime)-np.min(self.obj_ta.tatime))
         self.contour_plot.setXRange(min(self.obj_ta.tawavelength), max(self.obj_ta.tawavelength))'''
+        
         # Set labels and colormap
         self.contour_plot.setLabel('left', "Time (ps)")
         self.contour_plot.setLabel('bottom', "Wavelength (nm)")
