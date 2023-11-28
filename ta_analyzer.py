@@ -1,7 +1,6 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog,QMessageBox
+from PyQt5.QtWidgets import QTableWidgetItem, QApplication, QMainWindow, QFileDialog,QMessageBox
 import os
-import matplotlib.pyplot as plt
 import pyqtgraph as pg
 from ta_analyzer_ui import Ui_MainWindow  # Import the generated class from the generated file
 from ta_analyzer_core import *
@@ -17,7 +16,7 @@ class MyMainWindow(QMainWindow):
         # Connect signals and slots or customize UI elements here
         self.init_plots()
         self.init_buttons()
-
+        self.init_tables()
         
     def init_plots(self):
         # Initialize PlotWidgets
@@ -41,10 +40,18 @@ class MyMainWindow(QMainWindow):
     
     def init_buttons(self):  
         self.ui.button_load.clicked.connect(self.select_file) 
-    
+        self.ui.button_bgcorr.clicked.connect(self.bgcorr)
+        
     def init_tables(self):  
-        pass
+        self.ui.table_misc.setRowCount(2)
+        self.ui.table_misc.setColumnCount(10)
+        self.ui.table_misc.setItem(0,0,QTableWidgetItem("bgcorr pts"))
+        self.ui.table_misc.setItem(0,1,QTableWidgetItem("20"))
     
+    def bgcorr(self):
+        pts = int(self.ui.table_misc.item(0,1).text())
+        self.obj_ta.auto_bgcorr(pts)
+        self.plot_contour(mat = self.obj_ta.bgcorr)
     
     def select_file(self):
         options = QFileDialog.Options()
@@ -65,12 +72,14 @@ class MyMainWindow(QMainWindow):
             self.plot_contour()
             #self.plot_data()
             
-    def plot_contour(self):
+    def plot_contour(self,mat=None):
+        if mat is None:
+            mat = self.obj_ta.tamatrix
         y = np.insert(self.obj_ta.tatime,0,self.obj_ta.tatime[0])
         x = np.insert(self.obj_ta.tawavelength,0,self.obj_ta.tawavelength[0])
         Y, X = np.meshgrid(y, x)       
         self.contour_plot.clear()
-        self.contour_plot_data = pg.PColorMeshItem(X,Y,self.obj_ta.tamatrix)
+        self.contour_plot_data = pg.PColorMeshItem(X,Y,mat,levels=5, autoLevels=False)
         self.contour_plot.addItem(self.contour_plot_data)
         
         '''# Create the contour plot using ImageItem()

@@ -10,6 +10,7 @@ from glotaran.io import load_parameters
 from glotaran.io import save_dataset
 from glotaran.io.prepare_dataset import prepare_time_trace_dataset
 from glotaran.project.scheme import Scheme'''
+
 # load all and average the matrix
 def mat_avg(name, file_num):
     first_array = np.loadtxt(name+str(1))-np.loadtxt(name+str(1))
@@ -24,7 +25,7 @@ def mat_avg(name, file_num):
     np.savetxt(name+"averaged", avg_array, fmt="%f", delimiter="\t")
     return avg_array, mat_array
 
-# load tatime
+# load TaTime0
 def load_tatime(file_name):
     #time_total = np.loadtxt(file_name)[:, 0]
     #tatime = time_total[time_total != 0]
@@ -55,7 +56,12 @@ class load_spectra:
             # average the matrix
             self.tamatrix_avg, self.mat_array = mat_avg(self.file_inp, num_spec)
         
-
+    def mat_sub(self, obj_bg, modifier=None):
+        if modifier is None:
+            modifier = 1
+        self.tamatrix_avg = self.tamatrix_avg - obj_bg.tamatrix_avg * modifier
+        self.mat_array = self.mat_array - obj_bg.tamatrix_avg[:, :, np.newaxis] * modifier
+        
     # plot 1ps spectrum
     def get_1ps(self):
         diff = np.abs(self.tatime - 1)
@@ -141,7 +147,7 @@ class glotaran:
         np.savetxt(self.filename+"glo.ascii",self.output_matrix,header = self.header,fmt='%s',comments='',delimiter = '\t')
         
 class tamatrix_importer:
-    def __init__(self,filename,startnm = None, endnm = None):
+    def __init__(self,filename=None, startnm = None, endnm = None, obj = None):
         if startnm is None:
             self.startnm = 0
         else:
@@ -150,39 +156,44 @@ class tamatrix_importer:
             self.endnm = 1200
         else:
             self.endnm = endnm
-        
-        # Load firstcol wave and find startrow and endrow
-        # filename = input("Enter the filename for firstcol wave: ")
-        self.filename = filename
-        firstcol = np.loadtxt(self.filename)[:, 1]
-        if self.startnm < np.min(firstcol):
-            self.startrow = np.argmin(firstcol)
+        #load from file if no object is given
+        if obj is None:   
+            # Load firstcol wave and find startrow and endrow
+            # filename = input("Enter the filename for firstcol wave: ")
+            self.filename = filename
+            firstcol = np.loadtxt(self.filename)[:, 1]
+            if self.startnm < np.min(firstcol):
+                self.startrow = np.argmin(firstcol)
+            else:
+                for index in range(len(firstcol)):
+                    if firstcol[index] > self.startnm:
+                        self.startrow = index
+                        break
+            if self.endnm > np.max(firstcol):
+                self.endrow = np.argmax(firstcol)
+            else:
+                for index in range(len(firstcol)):
+                    if firstcol[index] > self.endnm:
+                        self.endrow = index
+                        break
+
+            # Load TAwavelength waves
+            self.tawavelength = np.loadtxt(self.filename, skiprows=self.startrow, max_rows=self.endrow-self.startrow)[:,1]
+            #np.savetxt(self.filename+"_tawavelength",tawavelength,fmt='%1.5f')
+
+            # Trim TAtime wave
+            self.tatime = np.loadtxt(self.filename)[:,0]
+            idx = np.loadtxt(self.filename).shape[1]-2
+            self.tatime = self.tatime[:idx]
+            #np.savetxt(self.filename+"_tatime",tatime,fmt='%1.5f')
+
+            # Load TAmatrix waves
+            self.tamatrix = np.loadtxt(self.filename, skiprows=self.startrow, max_rows=self.endrow-self.startrow, usecols=np.arange(2, idx+2))
+            #np.savetxt(self.filename+"_tamatrix",self.tamatrix,fmt='%1.5f'
         else:
-            for index in range(len(firstcol)):
-                if firstcol[index] > self.startnm:
-                    self.startrow = index
-                    break
-        if self.endnm > np.max(firstcol):
-            self.endrow = np.argmax(firstcol)
-        else:
-            for index in range(len(firstcol)):
-                if firstcol[index] > self.endnm:
-                    self.endrow = index
-                    break
-
-        # Load TAwavelength waves
-        self.tawavelength = np.loadtxt(self.filename, skiprows=self.startrow, max_rows=self.endrow-self.startrow)[:,1]
-        #np.savetxt(self.filename+"_tawavelength",tawavelength,fmt='%1.5f')
-
-        # Trim TAtime wave
-        self.tatime = np.loadtxt(self.filename)[:,0]
-        idx = np.loadtxt(self.filename).shape[1]-2
-        self.tatime = self.tatime[:idx]
-        #np.savetxt(self.filename+"_tatime",tatime,fmt='%1.5f')
-
-        # Load TAmatrix waves
-        self.tamatrix = np.loadtxt(self.filename, skiprows=self.startrow, max_rows=self.endrow-self.startrow, usecols=np.arange(2, idx+2))
-        #np.savetxt(self.filename+"_tamatrix",self.tamatrix,fmt='%1.5f')
+            self.tawavelength = obj.tawavelength
+            self.tatime = obj.tatime
+            self.tamatrix = obj.tamatrix_avg[:,2:]
 
     def contour(self,time_min,time_max):
         # Create a contour plot
@@ -255,14 +266,14 @@ class tamatrix_importer:
 
         # Create a figure and axis for the contour plot
         # Create contour plot
-        Y, X = np.meshgrid(self.tatime, self.tawavelength)
+        '''Y, X = np.meshgrid(self.tatime, self.tawavelength)
         plt.contourf(X, Y, self.bgcorr, [-0.005, -0.001, -0.0005,
                  0, 0.0005, 0.001, 0.005], cmap='rainbow')
         plt.ylim(-1, 1)
         plt.colorbar()
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Time (ps)")
-        plt.show()
+        plt.show()'''
 
         return self.bgcorr
     # zero time correction
@@ -278,13 +289,13 @@ class tamatrix_importer:
         "Draw wave Monotonic" and then click along to place data points on the contour plot, double clicking when you reach the last one.
         This will make two waves, named something like W_Ypoly0 (the y points) and W_XPoly0 (the x points).
         "matrix" is the name of the TA matrix you are correcting, e.g. "TAmatrix0".
-        "TAtime" is the name if the time axis, e.g. "tatime"
+        "TAtime" is the name if the time axis, e.g. "TAtime0"
         "TAwavelength" is the name of the wavelength axis, e.g. "tawavelength"
         "zerotime_x" is the wave with the x values of the zerotime wave drawn above, e.g. "W_XPoly0"
         "zerotime_y" is the wave with the y values of the zerotime wave drawn above, e.g. "W_YPoly0"
         Note that you could also fit the kinetics at a lot of different wavelengths and thereby determine a series of zerotimes ("zerotime_y")
         at a series of wavelengths ("zerotime_x")
-        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","tatime", "tawavelength","W_XPoly0","W_YPoly0")
+        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","TAtime0", "tawavelength","W_XPoly0","W_YPoly0")
         '''
 
         # import correction line from drawing script
@@ -333,13 +344,13 @@ class tamatrix_importer:
         "Draw wave Monotonic" and then click along to place data points on the contour plot, double clicking when you reach the last one.
         This will make two waves, named something like W_Ypoly0 (the y points) and W_XPoly0 (the x points).
         "matrix" is the name of the TA matrix you are correcting, e.g. "TAmatrix0".
-        "TAtime" is the name if the time axis, e.g. "tatime"
+        "TAtime" is the name if the time axis, e.g. "TAtime0"
         "TAwavelength" is the name of the wavelength axis, e.g. "tawavelength"
         "zerotime_x" is the wave with the x values of the zerotime wave drawn above, e.g. "W_XPoly0"
         "zerotime_y" is the wave with the y values of the zerotime wave drawn above, e.g. "W_YPoly0"
         Note that you could also fit the kinetics at a lot of different wavelengths and thereby determine a series of zerotimes ("zerotime_y")
         at a series of wavelengths ("zerotime_x")
-        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","tatime", "tawavelength","W_XPoly0","W_YPoly0")
+        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","TAtime0", "tawavelength","W_XPoly0","W_YPoly0")
         '''
 
         # import correction line from drawing script
