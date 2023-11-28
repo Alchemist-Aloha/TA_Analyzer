@@ -24,7 +24,7 @@ def mat_avg(name, file_num):
     np.savetxt(name+"averaged", avg_array, fmt="%f", delimiter="\t")
     return avg_array, mat_array
 
-# load TaTime0
+# load tatime
 def load_tatime(file_name):
     #time_total = np.loadtxt(file_name)[:, 0]
     #tatime = time_total[time_total != 0]
@@ -33,7 +33,7 @@ def load_tatime(file_name):
     tatime = tatime[:idx]
     return tatime
 
-# load TaWavelength0
+# load tawavelength
 def load_tawavelength(file_name):
     tawavelength = np.loadtxt(file_name)[:, 1]
     return tawavelength
@@ -45,24 +45,24 @@ class load_spectra:
         if num_spec is None or num_spec == 1:
             self.num_spec = 1
             self.tamatrix_avg = np.loadtxt(self.file_inp)
-            self.tatime0 = load_tatime(self.file_inp)
-            self.tawavelength0 = load_tawavelength(self.file_inp)
+            self.tatime = load_tatime(self.file_inp)
+            self.tawavelength = load_tawavelength(self.file_inp)
         else:
             self.num_spec = num_spec
-            # load tatime0 and tawavelength0 axes
-            self.tatime0 = load_tatime(self.file_inp+'1')
-            self.tawavelength0 = load_tawavelength(self.file_inp+'1')
+            # load tatime and tawavelength axes
+            self.tatime = load_tatime(self.file_inp+'1')
+            self.tawavelength = load_tawavelength(self.file_inp+'1')
             # average the matrix
             self.tamatrix_avg, self.mat_array = mat_avg(self.file_inp, num_spec)
         
 
     # plot 1ps spectrum
     def get_1ps(self):
-        diff = np.abs(self.tatime0 - 1)
+        diff = np.abs(self.tatime - 1)
         pt = pt = np.argmin(diff)
         self.spec_1ps = self.tamatrix_avg[:, pt+2]
         self.fig_s, self.ax_s = plt.subplots()
-        self.ax_s.plot(self.tawavelength0, self.spec_1ps)
+        self.ax_s.plot(self.tawavelength, self.spec_1ps)
         self.ax_s.set_title(self.file_inp)
         self.ax_s.set_xlabel('Wavelength (nm)')
         self.ax_s.set_ylabel('ΔOD')
@@ -71,21 +71,21 @@ class load_spectra:
     # plot multiple parallel traces to see photodamage
     def get_traces(self, wavelength,disable_plot = None):
         self.fig_k, self.ax_k = plt.subplots()
-        self.trace_array = np.zeros((len(self.tatime0), self.num_spec))
-        diff = np.abs(self.tawavelength0 - wavelength)
+        self.trace_array = np.zeros((len(self.tatime), self.num_spec))
+        diff = np.abs(self.tawavelength - wavelength)
         pt = np.argmin(diff)
         if self.num_spec == 1:
             self.trace_avg = self.tamatrix_avg[pt,2:]
-            self.ax_k.plot(np.log(self.tatime0), self.trace_avg,
+            self.ax_k.plot(np.log(self.tatime), self.trace_avg,
                             label=f'{wavelength} nm trace')
         else:           
             for i in range(self.num_spec):
                 self.trace_array[:, i] = self.mat_array[pt, 2:, i]
                 self.ax_k.plot(
-                        np.log(self.tatime0), self.trace_array[:, i], label=f'{wavelength} nm trace {i+1}')
+                        np.log(self.tatime), self.trace_array[:, i], label=f'{wavelength} nm trace {i+1}')
 
             self.trace_avg = self.tamatrix_avg[pt, 2:]
-            self.ax_k.plot(np.log(self.tatime0), self.trace_avg,
+            self.ax_k.plot(np.log(self.tatime), self.trace_avg,
                             label=f'{wavelength} nm trace averaged')
         self.ax_k.legend()
         self.ax_k.set_xlabel('Time (Log scale ps)')
@@ -98,9 +98,9 @@ class load_spectra:
 class compare_traces:
     def __init__(self, obj, wavelength):
         self.wavelength = wavelength
-        self.tatime0 = obj.tatime0
+        self.tatime = obj.tatime
         trace = obj.get_traces(wavelength, disable_plot = True).reshape(1, -1)
-        self.trace_array = np.empty((0,len(self.tatime0)))
+        self.trace_array = np.empty((0,len(self.tatime)))
         print(self.trace_array.size)
         print(trace.size)
         self.trace_array = np.append(self.trace_array, trace, axis = 0)
@@ -123,21 +123,21 @@ class compare_traces:
     def plot(self):
         self.fig, self.ax = plt.subplots()
         for i in range(len(self.trace_array)):
-            self.ax.plot(np.log(self.tatime0),self.trace_array[i,:]/np.max(np.abs(self.trace_array[i,:])), label = f'{self.name_list[i]} @ {self.wavelength_list[i]} nm')
+            self.ax.plot(np.log(self.tatime),self.trace_array[i,:]/np.max(np.abs(self.trace_array[i,:])), label = f'{self.name_list[i]} @ {self.wavelength_list[i]} nm')
         self.ax.legend()
         self.ax.set_title('Normalized traces with logarithmic time axis')
         self.ax.set_xlabel('Time (Log scale ps)')
         self.ax.set_ylabel('ΔOD')
             
 class glotaran:
-    def __init__(self,matrix_corr,tatime0,tawavelength0):
+    def __init__(self,matrix_corr,tatime,tawavelength):
         self.filename = matrix_corr
-        self.tatime0 = np.loadtxt(tatime0)
-        self.tawavelength0 = np.loadtxt(tawavelength0)
+        self.tatime = np.loadtxt(tatime)
+        self.tawavelength = np.loadtxt(tawavelength)
         self.output_matrix = np.loadtxt(matrix_corr)
-        self.output_matrix = np.append(self.tatime0.reshape(1,-1),self.output_matrix, axis = 0)
-        self.output_matrix = np.append(np.append("",self.tawavelength0).reshape(1,-1).T,self.output_matrix, axis = 1)
-        self.header = self.filename+'\n\nTime explicit\nintervalnr '+ str(len(self.tatime0))
+        self.output_matrix = np.append(self.tatime.reshape(1,-1),self.output_matrix, axis = 0)
+        self.output_matrix = np.append(np.append("",self.tawavelength).reshape(1,-1).T,self.output_matrix, axis = 1)
+        self.header = self.filename+'\n\nTime explicit\nintervalnr '+ str(len(self.tatime))
         np.savetxt(self.filename+"glo.ascii",self.output_matrix,header = self.header,fmt='%s',comments='',delimiter = '\t')
         
 class tamatrix_importer:
@@ -278,13 +278,13 @@ class tamatrix_importer:
         "Draw wave Monotonic" and then click along to place data points on the contour plot, double clicking when you reach the last one.
         This will make two waves, named something like W_Ypoly0 (the y points) and W_XPoly0 (the x points).
         "matrix" is the name of the TA matrix you are correcting, e.g. "TAmatrix0".
-        "TAtime" is the name if the time axis, e.g. "TAtime0"
-        "TAwavelength" is the name of the wavelength axis, e.g. "TAwavelength0"
+        "TAtime" is the name if the time axis, e.g. "tatime"
+        "TAwavelength" is the name of the wavelength axis, e.g. "tawavelength"
         "zerotime_x" is the wave with the x values of the zerotime wave drawn above, e.g. "W_XPoly0"
         "zerotime_y" is the wave with the y values of the zerotime wave drawn above, e.g. "W_YPoly0"
         Note that you could also fit the kinetics at a lot of different wavelengths and thereby determine a series of zerotimes ("zerotime_y")
         at a series of wavelengths ("zerotime_x")
-        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","TAtime0", "TAwavelength0","W_XPoly0","W_YPoly0")
+        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","tatime", "tawavelength","W_XPoly0","W_YPoly0")
         '''
 
         # import correction line from drawing script
@@ -333,13 +333,13 @@ class tamatrix_importer:
         "Draw wave Monotonic" and then click along to place data points on the contour plot, double clicking when you reach the last one.
         This will make two waves, named something like W_Ypoly0 (the y points) and W_XPoly0 (the x points).
         "matrix" is the name of the TA matrix you are correcting, e.g. "TAmatrix0".
-        "TAtime" is the name if the time axis, e.g. "TAtime0"
-        "TAwavelength" is the name of the wavelength axis, e.g. "TAwavelength0"
+        "TAtime" is the name if the time axis, e.g. "tatime"
+        "TAwavelength" is the name of the wavelength axis, e.g. "tawavelength"
         "zerotime_x" is the wave with the x values of the zerotime wave drawn above, e.g. "W_XPoly0"
         "zerotime_y" is the wave with the y values of the zerotime wave drawn above, e.g. "W_YPoly0"
         Note that you could also fit the kinetics at a lot of different wavelengths and thereby determine a series of zerotimes ("zerotime_y")
         at a series of wavelengths ("zerotime_x")
-        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","TAtime0", "TAwavelength0","W_XPoly0","W_YPoly0")
+        So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","tatime", "tawavelength","W_XPoly0","W_YPoly0")
         '''
 
         # import correction line from drawing script
