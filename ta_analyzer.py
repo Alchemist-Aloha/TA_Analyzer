@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QTableWidgetItem, QApplication, QMainWindow, QFileDialog,QMessageBox
+from PySide6.QtWidgets import QTableWidgetItem, QApplication, QMainWindow, QFileDialog,QMessageBox
 import os
 import pyqtgraph as pg
 from ta_analyzer_ui import Ui_MainWindow  # Import the generated class from the generated file
