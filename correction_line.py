@@ -1,6 +1,8 @@
+""" This script is used to draw a correction line on the contour plot of the TA matrix. The user can draw a line on the contour plot"""
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 class tamatrix_importer:
     def __init__(self):
@@ -8,6 +10,11 @@ class tamatrix_importer:
         self.endnm = 1000
 
     def import_data_silent(self, filename):
+        """Load the data from the file and store it in the class
+
+        Args:
+            filename (str): The filename of the data to be loaded
+        """
         # Load firstcol wave and find startrow and endrow
         # filename = input("Enter the filename for firstcol wave: ")
         startnm = 0
@@ -53,44 +60,52 @@ class tamatrix_importer:
 
         print("The number of time points taken as background: "+str(i+1))
         npavg /= points
-        #np.savetxt(self.filename+"_tamatrix_npavg", npavg, fmt='%1.5f')
+        # np.savetxt(self.filename+"_tamatrix_npavg", npavg, fmt='%1.5f')
         for x in range(self.tamatrix.shape[1]):
             self.bgcorr[:, x] = self.tamatrix[:, x] - npavg
 
         return self.bgcorr
     # zero time correction
 
+
 filename = input("input the tamatrix filename without _tamatrix\n")
 line_file = input("input the filename of output line\n")
 matrix = tamatrix_importer()
 matrix.import_data_silent(filename)
 TAtime = matrix.tatime
-TAwavelength=matrix.tawavelength
-TAmatrix=matrix.auto_bgcorr(20)
+TAwavelength = matrix.tawavelength
+TAmatrix = matrix.auto_bgcorr(20)
 
 fig, ax = plt.subplots()
 # Create contour plot
 Y, X = np.meshgrid(TAtime, TAwavelength)
-contour= ax.contour(X,Y,TAmatrix,[-0.005,-0.001,-0.0005,0,0.0005,0.001,0.005])
-plt.ylim(-1,1)
+contour = ax.contour(
+    X, Y, TAmatrix, [-0.005, -0.001, -0.0005, 0, 0.0005, 0.001, 0.005])
+plt.ylim(-1, 1)
+
 
 def tellme(s):
+    """Print a string in the lower left corner of the screen
+
+    Args:
+        s (str): The string to be printed
+    """
     print(s)
     plt.title(s, fontsize=16)
     plt.draw()
 
 
-#plt.waitforbuttonpress()
+# plt.waitforbuttonpress()
 
 while True:
     pts = []
     tellme('Left click to draw. \nRight click to remove. \nMiddle button to confirm')
-    pts = np.asarray(plt.ginput(-1, timeout=-1,show_clicks=True))
+    pts = np.asarray(plt.ginput(-1, timeout=-1, show_clicks=True))
     if len(pts) < 5:
         tellme('Too few points, starting over\n')
         time.sleep(1)  # Wait a second
 
-    ln = plt.plot(pts[:, 0], pts[:, 1],'xr-')
+    ln = plt.plot(pts[:, 0], pts[:, 1], 'xr-')
 
     tellme('Happy? Key click for yes, mouse click for no\n')
 
@@ -101,7 +116,5 @@ while True:
     for p in ln:
         p.remove()
 
-#Draw the correction line
-np.savetxt(line_file,pts,fmt='%1.5f')
-
-
+# Draw the correction line
+np.savetxt(line_file, pts, fmt='%1.5f')
