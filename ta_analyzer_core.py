@@ -7,6 +7,7 @@ from scipy.stats import norm
 from tqdm import tqdm
 import xarray as xr
 '''
+
 from glotaran.optimization.optimize import optimize
 from glotaran.io import load_model
 from glotaran.io import load_parameters
@@ -75,6 +76,7 @@ class load_single:
         self.spec_ta = data[:, 1]
         self.spec_on = data[:, 2]
         self.spec_off = data[:, 3]
+        self.ax = None
     
     def plot(self,ylim=None):
         """Plot the TA spectrum, ON and OFF spectrum
