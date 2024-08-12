@@ -334,33 +334,33 @@ class plot_glotaran:
                     find_rate = True
                 if find_rate is True and stripped_line.startswith("Standard errors:"):
                     error_list = [value for value in stripped_line.replace(',', ' ').split()]
-                    find_rate = False     
+                    find_rate = False
         # Convert the list of rate and error to a NumPy array
         self.rate_array = np.array(rate_list[4:]).astype(float)
         self.error_array = np.array(error_list[2:]).astype(float)
         # Load the DAS and traces data
         self.das = np.loadtxt(dir + "_DAS.ascii",skiprows = 1)
         self.traces = np.loadtxt(dir + "_traces.ascii",skiprows = 1)
-        self.fig_das,self.ax_das = plt.subplots(figsize = (6,6))
+        self.fig_das,self.ax_das = plt.subplots(figsize = (6,3))
         self.fig_das.subplots_adjust(left=0.2)
-        self.fig_traces,(self.ax_traces,self.ax_traces_2) = plt.subplots(1,2,width_ratios= [0.3,0.7], sharey=True, facecolor='w',figsize = (6,6))
+        self.fig_traces,(self.ax_traces,self.ax_traces_2) = plt.subplots(1,2,width_ratios= [0.3,0.7], sharey=True, facecolor='w',figsize = (6,3))
         self.fig_traces.subplots_adjust(wspace=0.1)
         if self.das.shape[1] != 2*self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1]/2)):
-            self.ax_das.plot(self.das[:,2*i], self.das[:,2*i+1], label=f'DAS {1/self.rate_array[i]:.2f} ps')
+            self.ax_das.plot(self.das[:,2*i], self.das[:,2*i+1], label='Long-term' if 1/self.rate_array[i] > 10000.0 else f'{1/self.rate_array[i]:.2f} ps')
             colorwaves(self.ax_das)
             self.ax_das.legend()
             self.ax_das.set_xlabel('Wavelength (nm)')
             self.ax_das.set_ylabel('DAS')
             # print(self.das[:,i], self.das[:,i+1])
-            
+        self.ax_das.axhline(y=0,c="black",linewidth=0.5,zorder=0)    
             
         for i in range(int(self.traces.shape[1]/2)):
             #p = find_closest_value([5],self.traces[:,0])[0]
             #time_log = np.concatenate((self.traces[:p,2*i],np.log10(self.traces[p:,2*i])),axis=0)
             self.ax_traces.plot(self.traces[:,2*i], self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
-            self.ax_traces_2.plot(self.traces[:,2*i], self.traces[:,2*i+1])
+            self.ax_traces_2.plot(self.traces[:,2*i], self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
             self.ax_traces.set_xlim(-1,1)
             self.ax_traces_2.set_xlim(1,len(self.traces[:,2*i]))
             self.ax_traces.spines['right'].set_visible(False)
@@ -375,8 +375,9 @@ class plot_glotaran:
             self.ax_traces.plot([1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs)
             self.ax_traces_2.plot([0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs)
             colorwaves(self.ax_traces)
+            colorwaves(self.ax_traces_2)
             # self.ax_traces.plot(time_log, self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
-            self.ax_traces.legend()
+            self.ax_traces_2.legend(loc = 'center right')
             self.ax_traces_2.set_xscale('log')
             self.ax_traces_2.set_xlabel('Time (ps)')
             self.ax_traces_2.xaxis.set_label_coords(0.2,-0.1)
@@ -820,7 +821,7 @@ class tamatrix_importer:
         for i in range(len(time_index)):
             spec = matrix[:,time_index[i]]
             self.spectra_set = np.c_[self.spectra_set,spec]
-            plt.plot(self.tawavelength,spec,label = '{:.2f}'.format(self.tatime[time_index[i]])+"ps", color = cmap(i),linewidth=0.5)
+            plt.plot(self.tawavelength,spec,label = '{:.2f}'.format(self.tatime[time_index[i]])+" ps", color = cmap(i),linewidth=0.5)
         #plt.ylim(-0.05,0.05)
         plt.title(self.filename)
         plt.rcParams.update({
@@ -850,7 +851,7 @@ class tamatrix_importer:
         self.spectra_set, time_index = self.auto_taspectra(time_pts, mat)
         header_str = 'Wavelength\t'
         for time in time_index:
-            header_str= header_str+"s_"+name+"_"+'{:.2f}'.format(self.tatime[time])+"ps\t"
+            header_str= header_str+"s_"+name+"_"+'{:.2f}'.format(self.tatime[time])+" ps\t"
         np.savetxt("s_"+name, self.spectra_set,header=header_str,fmt = '%1.5f',delimiter = '\t')
         print("File s_"+name+" has been saved\n")
 
@@ -860,7 +861,7 @@ class tamatrix_importer:
         index = np.argmin(np.abs(diff))
         np.savetxt("s_"+name+"_"+'{:.2f}'.format(self.tatime[index])+" ps", matrix[:,index],fmt = '%1.5f')
         print("File s_"+name+"_"+'{:.2f}'.format(self.tatime[index])+" ps has been saved\n")
-        plt.plot(self.tawavelength, matrix[:,index], label= '{:.2f}'.format(self.tatime[index])+"ps" )
+        plt.plot(self.tawavelength, matrix[:,index], label= '{:.2f}'.format(self.tatime[index])+" ps" )
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("ΔOD")
         plt.legend()
@@ -1242,4 +1243,4 @@ def colorwaves(ax):
     # Set the color for each line
     for i , line in enumerate(lines):
         line.set_color(colors[i])
-    ax.legend()
+    # ax.legend()
