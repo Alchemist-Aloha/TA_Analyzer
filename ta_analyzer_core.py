@@ -853,7 +853,7 @@ class tamatrix_importer:
         colors = plt.cm.rainbow(np.linspace(1, 0, len(time_index)))
         cmap = ListedColormap(colors)
         self.spectra_set = self.tawavelength.copy()
-        plt.figure(figsize=(7, 4))
+        plt.figure(figsize=(6, 3))
         # plot spectra together
         for i in range(len(time_index)):
             spec = matrix[:, time_index[i]]
@@ -890,7 +890,7 @@ class tamatrix_importer:
         header_str = 'Wavelength\t'
         for time in time_index:
             header_str = header_str+"s_"+name+"_" + \
-                '{:.2f}'.format(self.tatime[time])+" ps\t"
+                '{:.2f}'.format(self.tatime[time])+"ps\t"
         np.savetxt("s_"+name, self.spectra_set,
                    header=header_str, fmt='%1.5f', delimiter='\t')
         print("File s_"+name+" has been saved\n")
