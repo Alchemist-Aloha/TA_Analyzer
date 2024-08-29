@@ -320,10 +320,24 @@ class glotaran:
             np.append("", self.tawavelength).reshape(1, -1).T, self.output_matrix, axis=1)
         self.header = self.filename + \
             '\n\nTime explicit\nintervalnr ' + str(len(self.tatime))
-        np.savetxt(self.filename+"glo.ascii", self.output_matrix,
+        np.savetxt(self.filename.split(".")[0]+".ascii", self.output_matrix,
                    header=self.header, fmt='%s', comments='', delimiter='\t')
 
-
+class merge_glotaran:
+    def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
+        self.glotaran_vis = glotaran_vis
+        self.glotaran_ir = glotaran_ir
+        if np.array_equal(self.glotaran_vis.tatime, self.glotaran_ir.tatime):
+            self.tatime = self.glotaran_vis.tatime
+        else:
+            print("Time axis mismatch")
+        self.vis_max_pt = np.argmin(np.abs(self.glotaran_vis.tawavelength - vis_max))
+        self.ir_min_pt = np.argmin(np.abs(self.glotaran_ir.tawavelength - ir_min))
+        self.output_matrix = np.vstack((self.glotaran_vis.output_matrix[0:self.vis_max_pt+1, :], self.glotaran_ir.output_matrix[self.ir_min_pt:, :]))
+        self.header = self.glotaran_vis.header
+        np.savetxt(self.glotaran_vis.filename.split(".")[0]+"_ir_merged.ascii", self.output_matrix,
+                   header=self.header, fmt='%s', comments='', delimiter='\t')
+        
 class load_glotaran:
     """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis
     """
