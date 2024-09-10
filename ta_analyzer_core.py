@@ -380,14 +380,10 @@ class plot_glotaran:
         # Convert the list of rate and error to a NumPy array
         self.rate_array = np.array(rate_list[4:]).astype(float)
         self.error_array = np.array(error_list[2:]).astype(float)
-        # Load the DAS and traces data
-        self.das = np.loadtxt(dir + "_DAS.ascii", skiprows=1)
-        self.traces = np.loadtxt(dir + "_traces.ascii", skiprows=1)
+        # Load the DAS data
+        self.das = np.loadtxt(dir + "_DAS.ascii", skiprows=1)       
         self.fig_das, self.ax_das = plt.subplots(figsize=(6, 3))
         self.fig_das.subplots_adjust(left=0.2)
-        self.fig_traces, (self.ax_traces, self.ax_traces_2) = plt.subplots(
-            1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor='w', figsize=(6, 3))
-        self.fig_traces.subplots_adjust(wspace=0.1)
         if self.das.shape[1] != 2*self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1]/2)):
@@ -400,37 +396,44 @@ class plot_glotaran:
             # print(self.das[:,i], self.das[:,i+1])
         self.ax_das.axhline(y=0, c="black", linewidth=0.5, zorder=0)
 
-        for i in range(int(self.traces.shape[1]/2)):
-            # p = find_closest_value([5],self.traces[:,0])[0]
-            # time_log = np.concatenate((self.traces[:p,2*i],np.log10(self.traces[p:,2*i])),axis=0)
-            self.ax_traces.plot(
-                self.traces[:, 2*i], self.traces[:, 2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
-            self.ax_traces_2.plot(
-                self.traces[:, 2*i], self.traces[:, 2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
-            self.ax_traces.set_xlim(-1, 1)
-            self.ax_traces_2.set_xlim(1, len(self.traces[:, 2*i]))
-            self.ax_traces.spines['right'].set_visible(False)
-            self.ax_traces_2.spines['left'].set_visible(False)
-            self.ax_traces.yaxis.tick_left()
-            self.ax_traces.tick_params(labelright=False)
-            self.ax_traces_2.tick_params(axis='y', labelleft=False)
-            self.ax_traces_2.yaxis.tick_right()
-            d = .5  # proportion of vertical to horizontal extent of the slanted line
-            kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
-                          linestyle="none", color='k', mec='k', mew=1, clip_on=False)
-            self.ax_traces.plot(
-                [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs)
-            self.ax_traces_2.plot(
-                [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs)
-            colorwaves(self.ax_traces)
-            colorwaves(self.ax_traces_2)
-            # self.ax_traces.plot(time_log, self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
-            self.ax_traces_2.legend(loc='center right')
-            self.ax_traces_2.set_xscale('log')
-            self.ax_traces_2.set_xlabel('Time (ps)')
-            self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
-            self.ax_traces.set_ylabel('Amplitude')
-
+        # Load the trace data
+        try:
+            self.traces = np.loadtxt(dir + "_traces.ascii", skiprows=1)
+            self.fig_traces, (self.ax_traces, self.ax_traces_2) = plt.subplots(
+                1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor='w', figsize=(6, 3))
+            self.fig_traces.subplots_adjust(wspace=0.1)
+            for i in range(int(self.traces.shape[1]/2)):
+                # p = find_closest_value([5],self.traces[:,0])[0]
+                # time_log = np.concatenate((self.traces[:p,2*i],np.log10(self.traces[p:,2*i])),axis=0)
+                self.ax_traces.plot(
+                    self.traces[:, 2*i], self.traces[:, 2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
+                self.ax_traces_2.plot(
+                    self.traces[:, 2*i], self.traces[:, 2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
+                self.ax_traces.set_xlim(-1, 1)
+                self.ax_traces_2.set_xlim(1, len(self.traces[:, 2*i]))
+                self.ax_traces.spines['right'].set_visible(False)
+                self.ax_traces_2.spines['left'].set_visible(False)
+                self.ax_traces.yaxis.tick_left()
+                self.ax_traces.tick_params(labelright=False)
+                self.ax_traces_2.tick_params(axis='y', labelleft=False)
+                self.ax_traces_2.yaxis.tick_right()
+                d = .5  # proportion of vertical to horizontal extent of the slanted line
+                kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
+                            linestyle="none", color='k', mec='k', mew=1, clip_on=False)
+                self.ax_traces.plot(
+                    [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs)
+                self.ax_traces_2.plot(
+                    [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs)
+                colorwaves(self.ax_traces)
+                colorwaves(self.ax_traces_2)
+                # self.ax_traces.plot(time_log, self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
+                self.ax_traces_2.legend(loc='center right')
+                self.ax_traces_2.set_xscale('log')
+                self.ax_traces_2.set_xlabel('Time (ps)')
+                self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
+                self.ax_traces.set_ylabel('Amplitude')
+        except:
+            print('No trace data found or error in loading trace data')
 
 class tamatrix_importer:
     """Class to import the TA matrix from the file. The input may vary from filename to Load_spectra object or load_glotaran object
