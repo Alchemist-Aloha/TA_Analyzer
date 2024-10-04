@@ -206,6 +206,70 @@ class load_spectra:
         self.ax_k.set_title(self.file_inp)
 
         return self.trace_avg
+    
+    def fit_kinetic(self, wavelength, num_of_exp=None, params=None, time_split=None):
+        if params is None:
+            params = params_init(num_of_exp)
+        # plot spectra together
+        diff = np.abs(self.tawavelength - wavelength)
+        wavelength_index = np.argmin(np.abs(diff))
+        y = self.trace_avg
+        t = self.tatime
+        lmodel = lmfit.Model(multiexp_func)
+        result = lmodel.fit(y, params=params, t=t, max_nfev=100000,
+                            ftol=1e-9, xtol=1e-9, nan_policy='omit')
+        # print(result.fit_report())
+        print('-------------------------------')
+        print(
+            f'{self.file_inp} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm')
+        print('-------------------------------')
+        print(f'chi-square: {result.chisqr:11.6f}')
+        pearsonr = np.corrcoef(result.best_fit, y)[0, 1]
+        print(f'Pearson\'s R: {pearsonr:11.6f}')
+        print('-------------------------------')
+        print('Parameter    Value       Stderr')
+        for name, param in result.params.items():
+            print(f'{name:7s} {param.value:11.6f} {param.stderr:11.6f}')
+        print('-------------------------------')
+        # result.plot_fit()
+        if time_split is None:
+            pt_split = find_closest_value([5], self.tatime)[0]
+        else:
+            pt_split = find_closest_value([time_split], self.tatime)[0]
+        fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True,
+                                       gridspec_kw={'width_ratios': [2, 3]})
+        fig.subplots_adjust(wspace=0.05)
+
+        ax1.scatter(t[:pt_split], y[:pt_split], marker='o', color='black')
+        ax1.plot(t[:pt_split], result.best_fit[:pt_split], color='red')
+        ax1.set_xlim(t[0], t[pt_split-1])
+        # ax1.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
+        ax1.spines['right'].set_visible(False)
+        ax1.tick_params(right=False)
+
+        ax2.scatter(t[pt_split:], y[pt_split:], marker='o', color='black',
+                    label=f"{self.tawavelength[wavelength_index]:.2f} nm")
+        ax2.plot(t[pt_split:], result.best_fit[pt_split:], color='red',
+                 label=f"{self.tawavelength[wavelength_index]:.2f} nm fit")
+        ax2.set_xscale('log')
+        ax2.set_xlim(t[pt_split-1], t[-1])
+        # ax2.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
+        ax2.spines['left'].set_visible(False)
+        ax2.tick_params(left=False)
+
+        # Creating a gap between the subplots to indicate the broken axis
+        gap = 0.1
+        ax1.spines['right'].set_position(('outward', gap))
+        ax2.spines['left'].set_position(('outward', gap))
+        ax1.axhline(0, color='black', linestyle='-', linewidth=0.5)
+        ax2.axhline(0, color='black', linestyle='-', linewidth=0.5)
+        # Centered title above subplots
+        fig.suptitle(self.file_inp, fontsize=10, ha='center')
+        plt.legend(loc='best')
+        fig.text(0.5, 0.04, 'Time (ps)', ha='center', fontsize=8)
+        ax1.set_ylabel("ΔOD")
+        plt.show()
+        return result
 
     def correct_burn(self, wavelength, disable_plot=None):
         """Correct the sample burning (degredation) according to selected wavelength in the TA matrix. Savethe corrected matrix as a new TA matrix file
