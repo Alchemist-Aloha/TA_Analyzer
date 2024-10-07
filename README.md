@@ -1,5 +1,5 @@
 # TA_Analyzer
-Jupyter notebobok for transient absorption analysis. Import 2d transient absorption matrix. Do background and zero time correction. Convert the matrix to Glotaran or Pyglotaran input. 
+Jupyter notebook for transient absorption analysis. Import 2d transient absorption matrix. Do background and zero time correction. Convert the matrix to Glotaran or Pyglotaran input. 
 
 # Features
 1. Compare and average multiple parallel TA experiments. e.g. Plotting multiple TA traces to verify photo damage or power dependence. 
