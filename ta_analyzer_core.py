@@ -207,9 +207,13 @@ class load_spectra:
 
         return self.trace_avg
     
-    def fit_kinetic(self, wavelength, num_of_exp=None, params=None, time_split=None):
+    def fit_kinetic(self, wavelength, num_of_exp=None, params=None, time_split=None, w1_vary=None, w12_vary=None):
+        if w1_vary is None:
+            w1_vary=True
+        if w12_vary is None:
+            w12_vary=True
         if params is None:
-            params = params_init(num_of_exp)
+            params = params_init(num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength)
         wavelength_index = np.argmin(np.abs(diff))
@@ -1335,9 +1339,13 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     return result
 
 
-def params_init(num_of_exp):
+def params_init(num_of_exp, w1_vary = None, w12_vary = None):
+    if w12_vary is None:
+        w12_vary = False
+    if w1_vary is None:
+        w1_vary = True
     params = lmfit.Parameters()
-    params.add('w0', value=0.1, min=0.05, max=0.2)
+    params.add('w0', value=0.1, min=0.05, max=0.2, vary = w1_vary)
     params.add('w1', value=1.0, vary=False)
     params.add('w2', value=0, min=-0.2, max=0.2)
     params.add('w3', value=1, min=0.01, max=5000)
@@ -1375,7 +1383,7 @@ def params_init(num_of_exp):
 
     params.add('w10', value=0.0, min=-0.5, max=0.5)
     params.add('w11', value=0.0, min=-0.1, max=0.1)
-    params.add('w12', value=0.0, min=-0.5, max=0.5, vary=False)
+    params.add('w12', value=0.0, min=-0.5, max=0.5, vary=w12_vary)
     return params
 
 
