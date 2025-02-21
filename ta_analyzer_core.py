@@ -432,6 +432,8 @@ class plot_glotaran:
         dir is the directory of the file without the extension
         """
         self.filename = dir
+        rate_list = []
+        error_list = []
         with open(dir + "_summary.txt", 'r') as file:
             find_rate = False
             for line in file:
