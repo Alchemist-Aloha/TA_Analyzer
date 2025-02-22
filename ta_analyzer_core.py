@@ -434,6 +434,8 @@ class plot_glotaran:
         rate_list = []
         error_list = []
         self.filename = dir
+        rate_list = []
+        error_list = []
         with open(dir + "_summary.txt", 'r') as file:
             find_rate = False
             for line in file:
