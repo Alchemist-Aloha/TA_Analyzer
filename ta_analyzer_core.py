@@ -206,14 +206,15 @@ class load_spectra:
         self.ax_k.set_title(self.file_inp)
 
         return self.trace_avg
-    
+
     def fit_kinetic(self, wavelength, num_of_exp=None, params=None, time_split=None, w1_vary=None, w12_vary=None):
         if w1_vary is None:
-            w1_vary=True
+            w1_vary = True
         if w12_vary is None:
-            w12_vary=True
+            w12_vary = True
         if params is None:
-            params = params_init(num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
+            params = params_init(
+                num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength)
         wavelength_index = np.argmin(np.abs(diff))
@@ -391,6 +392,7 @@ class glotaran:
         np.savetxt(self.filename.split(".")[0]+".ascii", self.output_matrix,
                    header=self.header, fmt='%s', comments='', delimiter='\t')
 
+
 class merge_glotaran:
     def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
         self.glotaran_vis = glotaran_vis
@@ -399,13 +401,17 @@ class merge_glotaran:
             self.tatime = self.glotaran_vis.tatime
         else:
             print("Time axis mismatch")
-        self.vis_max_pt = np.argmin(np.abs(self.glotaran_vis.tawavelength - vis_max))
-        self.ir_min_pt = np.argmin(np.abs(self.glotaran_ir.tawavelength - ir_min))
-        self.output_matrix = np.vstack((self.glotaran_vis.output_matrix[0:self.vis_max_pt+1, :], self.glotaran_ir.output_matrix[self.ir_min_pt:, :]))
+        self.vis_max_pt = np.argmin(
+            np.abs(self.glotaran_vis.tawavelength - vis_max))
+        self.ir_min_pt = np.argmin(
+            np.abs(self.glotaran_ir.tawavelength - ir_min))
+        self.output_matrix = np.vstack(
+            (self.glotaran_vis.output_matrix[0:self.vis_max_pt+1, :], self.glotaran_ir.output_matrix[self.ir_min_pt:, :]))
         self.header = self.glotaran_vis.header
         np.savetxt(self.glotaran_vis.filename.split(".")[0]+"_ir_merged.ascii", self.output_matrix,
                    header=self.header, fmt='%s', comments='', delimiter='\t')
-        
+
+
 class load_glotaran:
     """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis
     """
@@ -491,7 +497,7 @@ class plot_glotaran:
                 self.ax_traces_2.yaxis.tick_right()
                 d = .5  # proportion of vertical to horizontal extent of the slanted line
                 kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
-                            linestyle="none", color='k', mec='k', mew=1, clip_on=False)
+                              linestyle="none", color='k', mec='k', mew=1, clip_on=False)
                 self.ax_traces.plot(
                     [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs)
                 self.ax_traces_2.plot(
@@ -506,6 +512,7 @@ class plot_glotaran:
                 self.ax_traces.set_ylabel('Amplitude')
         except:
             print('No trace data found or error in loading trace data')
+
 
 class tamatrix_importer:
     """Class to import the TA matrix from the file. The input may vary from filename to Load_spectra object or load_glotaran object
@@ -1343,13 +1350,13 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     return result
 
 
-def params_init(num_of_exp, w1_vary = None, w12_vary = None):
+def params_init(num_of_exp, w1_vary=None, w12_vary=None):
     if w12_vary is None:
         w12_vary = False
     if w1_vary is None:
         w1_vary = True
     params = lmfit.Parameters()
-    params.add('w0', value=0.1, min=0.05, max=0.2, vary = w1_vary)
+    params.add('w0', value=0.1, min=0.05, max=0.2, vary=w1_vary)
     params.add('w1', value=1.0, vary=False)
     params.add('w2', value=0, min=-0.2, max=0.2)
     params.add('w3', value=1, min=0.01, max=5000)
