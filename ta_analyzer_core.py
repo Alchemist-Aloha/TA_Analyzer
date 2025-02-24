@@ -17,7 +17,6 @@ from glotaran.io import save_dataset
 from glotaran.io.prepare_dataset import prepare_time_trace_dataset
 from glotaran.project.scheme import Scheme
 """
-# load all and average the matrix
 
 
 def mat_avg(name, select):
@@ -41,11 +40,8 @@ def mat_avg(name, select):
     return avg_array, mat_array
 
 
-# load TaTime0
-
-
 def load_tatime(mat):
-    """Load the time axis of the TA matrix
+    """Load the time axis TATime0 of the TA matrix
 
     Args:
         mat (2darray): The TA matrix as a numpy array
@@ -57,11 +53,8 @@ def load_tatime(mat):
     return tatime
 
 
-# load tawavelength
-
-
 def load_tawavelength(mat):
-    """Load the wavelength axis of the TA matrix
+    """Load the wavelength axis TAWavelength0 of the TA matrix
 
     Args:
         mat (2darray): The TA matrix as a numpy array
