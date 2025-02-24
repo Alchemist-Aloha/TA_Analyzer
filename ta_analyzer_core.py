@@ -511,9 +511,6 @@ class plot_glotaran:
         self.das = np.loadtxt(dir + "_DAS.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=(6, 3))
         self.fig_das.subplots_adjust(left=0.2)
-        self.fig_traces, (self.ax_traces, self.ax_traces_2) = plt.subplots(
-            1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor='w', figsize=(6, 3))
-        self.fig_traces.subplots_adjust(wspace=0.1)
         if self.das.shape[1] != 2*self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
