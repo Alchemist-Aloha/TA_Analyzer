@@ -1707,6 +1707,65 @@ def params_init(
     w12_max=0.5,
     w12_vary=None,
 ):
+    """_summary_
+
+    Initialize parameters for the TA Analyzer.
+        num_of_exp (int): Number of experiments.
+        w0_value (float, optional): Initial value for w0. Defaults to 0.1.
+        w0_min (float, optional): Minimum value for w0. Defaults to 0.05.
+        w0_max (float, optional): Maximum value for w0. Defaults to 0.2.
+        w0_vary (bool, optional): Whether w0 varies. Defaults to None.
+        w1_value (float, optional): Initial value for w1. Defaults to 1.0.
+        w1_vary (bool, optional): Whether w1 varies. Defaults to False.
+        c1_value (float, optional): Initial value for c1. Defaults to 0.
+        c1_min (float, optional): Minimum value for c1. Defaults to -0.5.
+        c1_max (float, optional): Maximum value for c1. Defaults to 0.5.
+        c1_vary (bool, optional): Whether c1 varies. Defaults to True.
+        t1_value (float, optional): Initial value for t1. Defaults to 1.
+        t1_min (float, optional): Minimum value for t1. Defaults to 0.01.
+        t1_max (float, optional): Maximum value for t1. Defaults to 5000.
+        t1_vary (bool, optional): Whether t1 varies. Defaults to True.
+        c2_value (float, optional): Initial value for c2. Defaults to 0.
+        c2_min (float, optional): Minimum value for c2. Defaults to -0.5.
+        c2_max (float, optional): Maximum value for c2. Defaults to 0.5.
+        c2_vary (bool, optional): Whether c2 varies. Defaults to None.
+        t2_value (float, optional): Initial value for t2. Defaults to 10.
+        t2_min (float, optional): Minimum value for t2. Defaults to 0.01.
+        t2_max (float, optional): Maximum value for t2. Defaults to 5000.
+        t2_vary (bool, optional): Whether t2 varies. Defaults to None.
+        c3_value (float, optional): Initial value for c3. Defaults to 0.
+        c3_min (float, optional): Minimum value for c3. Defaults to -0.5.
+        c3_max (float, optional): Maximum value for c3. Defaults to 0.5.
+        c3_vary (bool, optional): Whether c3 varies. Defaults to None.
+        t3_value (float, optional): Initial value for t3. Defaults to 50.
+        t3_min (float, optional): Minimum value for t3. Defaults to 0.01.
+        t3_max (float, optional): Maximum value for t3. Defaults to 5000.
+        t3_vary (bool, optional): Whether t3 varies. Defaults to None.
+        c4_value (float, optional): Initial value for c4. Defaults to 0.
+        c4_min (float, optional): Minimum value for c4. Defaults to -0.5.
+        c4_max (float, optional): Maximum value for c4. Defaults to 0.5.
+        c4_vary (bool, optional): Whether c4 varies. Defaults to None.
+        t4_value (float, optional): Initial value for t4. Defaults to 500.
+        t4_min (float, optional): Minimum value for t4. Defaults to 0.01.
+        t4_max (float, optional): Maximum value for t4. Defaults to 5000.
+        t4_vary (bool, optional): Whether t4 varies. Defaults to None.
+        w10_value (float, optional): Initial value for w10. Defaults to 0.0.
+        w10_min (float, optional): Minimum value for w10. Defaults to -0.5.
+        w10_max (float, optional): Maximum value for w10. Defaults to 0.5.
+        w10_vary (bool, optional): Whether w10 varies. Defaults to True.
+        w11_value (float, optional): Initial value for w11. Defaults to 0.0.
+        w11_min (float, optional): Minimum value for w11. Defaults to -0.1.
+        w11_max (float, optional): Maximum value for w11. Defaults to 0.1.
+        w11_vary (bool, optional): Whether w11 varies. Defaults to True.
+        w12_value (float, optional): Initial value for w12. Defaults to 0.0.
+        w12_min (float, optional): Minimum value for w12. Defaults to -0.5.
+        w12_max (float, optional): Maximum value for w12. Defaults to 0.5.
+        w12_vary (bool, optional): Whether w12 varies. Defaults to None.
+        lmfit.Parameters: Initialized parameters for the TA Analyzer.
+
+    Returns:
+        _type_: _description_
+    """    
     if w0_vary is None:
         w0_vary = True
 
