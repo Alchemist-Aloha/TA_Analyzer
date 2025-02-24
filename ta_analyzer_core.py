@@ -1707,7 +1707,7 @@ def params_init(
     w12_max=0.5,
     w12_vary=None,
 ):
-    """_summary_
+    """Initialize parameters for the TA Analyzer.
 
     Initialize parameters for the TA Analyzer.
         num_of_exp (int): Number of experiments.
@@ -1761,10 +1761,10 @@ def params_init(
         w12_min (float, optional): Minimum value for w12. Defaults to -0.5.
         w12_max (float, optional): Maximum value for w12. Defaults to 0.5.
         w12_vary (bool, optional): Whether w12 varies. Defaults to None.
-        lmfit.Parameters: Initialized parameters for the TA Analyzer.
+        
 
     Returns:
-        _type_: _description_
+        lmfit.Parameters: Initialized parameters for the TA Analyzer.
     """    
     if w0_vary is None:
         w0_vary = True
