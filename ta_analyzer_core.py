@@ -1,12 +1,12 @@
-import numpy as np
+import lmfit
 import matplotlib.pyplot as plt
+import numpy as np
+import xarray as xr
 
 # %matplotlib widget #uncomment for interactive plot
 from matplotlib.colors import ListedColormap
-import lmfit
 from scipy.stats import norm
 from tqdm import tqdm
-import xarray as xr
 
 """
 
