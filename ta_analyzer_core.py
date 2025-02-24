@@ -1708,8 +1708,7 @@ def params_init(
     w12_vary=None,
 ):
     """Initialize parameters for the TA Analyzer.
-
-    Initialize parameters for the TA Analyzer.
+    Args:
         num_of_exp (int): Number of experiments.
         w0_value (float, optional): Initial value for w0. Defaults to 0.1.
         w0_min (float, optional): Minimum value for w0. Defaults to 0.05.
