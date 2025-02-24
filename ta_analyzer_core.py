@@ -215,22 +215,15 @@ class load_spectra:
         self.ax_k.set_title(self.file_inp)
 
         return self.trace_avg
-
-    def fit_kinetic(
-        self,
-        wavelength,
-        num_of_exp=None,
-        params=None,
-        time_split=None,
-        w1_vary=None,
-        w12_vary=None,
-    ):
+    
+    def fit_kinetic(self, wavelength, num_of_exp=None, params=None, time_split=None, w1_vary=None, w12_vary=None):
         if w1_vary is None:
             w1_vary = True
         if w12_vary is None:
             w12_vary = True
         if params is None:
-            params = params_init(num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
+            params = params_init(
+                num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength)
         wavelength_index = np.argmin(np.abs(diff))
@@ -451,6 +444,7 @@ class glotaran:
         )
 
 
+
 class merge_glotaran:
     def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
         self.glotaran_vis = glotaran_vis
@@ -461,23 +455,11 @@ class merge_glotaran:
             print("Time axis mismatch")
         self.vis_max_pt = np.argmin(np.abs(self.glotaran_vis.tawavelength - vis_max))
         self.ir_min_pt = np.argmin(np.abs(self.glotaran_ir.tawavelength - ir_min))
-        self.output_matrix = np.vstack(
-            (
-                self.glotaran_vis.output_matrix[0 : self.vis_max_pt + 1, :],
-                self.glotaran_ir.output_matrix[self.ir_min_pt :, :],
-            )
-        )
+        self.output_matrix = np.vstack((self.glotaran_vis.output_matrix[0:self.vis_max_pt+1, :], self.glotaran_ir.output_matrix[self.ir_min_pt:, :]))
         self.header = self.glotaran_vis.header
-        np.savetxt(
-            self.glotaran_vis.filename.split(".")[0] + "_ir_merged.ascii",
-            self.output_matrix,
-            header=self.header,
-            fmt="%s",
-            comments="",
-            delimiter="\t",
-        )
-
-
+        np.savetxt(self.glotaran_vis.filename.split(".")[0]+"_ir_merged.ascii", self.output_matrix,
+                   header=self.header, fmt='%s', comments='', delimiter='\t')
+        
 class load_glotaran:
     """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis"""
 
@@ -502,6 +484,8 @@ class plot_glotaran:
         Files: "_traces.ascii", "_DAS.ascii", "_summary.txt"
         dir is the directory of the file without the extension
         """
+        rate_list = []
+        error_list = []
         self.filename = dir
         rate_list = []
         error_list = []
@@ -525,14 +509,12 @@ class plot_glotaran:
         self.error_array = np.array(error_list[2:]).astype(float)
         # Load the DAS and traces data
         self.das = np.loadtxt(dir + "_DAS.ascii", skiprows=1)
-        self.traces = np.loadtxt(dir + "_traces.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=(6, 3))
         self.fig_das.subplots_adjust(left=0.2)
         self.fig_traces, (self.ax_traces, self.ax_traces_2) = plt.subplots(
-            1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor="w", figsize=(6, 3)
-        )
+            1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor='w', figsize=(6, 3))
         self.fig_traces.subplots_adjust(wspace=0.1)
-        if self.das.shape[1] != 2 * self.rate_array.shape[0]:
+        if self.das.shape[1] != 2*self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
             self.ax_das.plot(
@@ -582,16 +564,9 @@ class plot_glotaran:
                 self.ax_traces.tick_params(labelright=False)
                 self.ax_traces_2.tick_params(axis="y", labelleft=False)
                 self.ax_traces_2.yaxis.tick_right()
-                d = 0.5  # proportion of vertical to horizontal extent of the slanted line
-                kwargs = dict(
-                    marker=[(-1, -d), (1, d)],
-                    markersize=12,
-                    linestyle="none",
-                    color="k",
-                    mec="k",
-                    mew=1,
-                    clip_on=False,
-                )
+                d = .5  # proportion of vertical to horizontal extent of the slanted line
+                kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
+                            linestyle="none", color='k', mec='k', mew=1, clip_on=False)
                 self.ax_traces.plot(
                     [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs
                 )
@@ -608,6 +583,7 @@ class plot_glotaran:
                 self.ax_traces.set_ylabel("Amplitude")
         except:
             print("No trace data found or error in loading trace data")
+
 
 
 class tamatrix_importer:
@@ -1623,100 +1599,17 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     # b=4*np.log1p(2)/(w[0]**2)
     return result
 
-def params_init(num_of_exp,
-                w0_value=0.1, w0_min=0.05, w0_max=0.2, w0_vary=None,
-                w1_value=1.0, w1_vary=False,
-                c1_value=0, c1_min=-0.5, c1_max=0.5, c1_vary=True,
-                t1_value=1, t1_min=0.01, t1_max=5000, t1_vary=True,
-                c2_value=0, c2_min=-0.5, c2_max=0.5, c2_vary=None,
-                t2_value=10, t2_min=0.01, t2_max=5000, t2_vary=None,
-                c3_value=0, c3_min=-0.5, c3_max=0.5, c3_vary=None,
-                t3_value=50, t3_min=0.01, t3_max=5000, t3_vary=None,
-                c4_value=0, c4_min=-0.5, c4_max=0.5, c4_vary=None,
-                t4_value=500, t4_min=0.01, t4_max=5000, t4_vary=None,
-                w10_value=0.0, w10_min=-0.5, w10_max=0.5, w10_vary=True,
-                w11_value=0.0, w11_min=-0.1, w11_max=0.1, w11_vary=True,
-                w12_value=0.0, w12_min=-0.5, w12_max=0.5, w12_vary=False):
-    '''
-    Initialize parameters for a multiexponential function.
-    Parameters:
-    num_of_exp (int): Number of exponentials to include (1 to 4).
-    w0_value (float): Initial value for w0 parameter.
-    w0_min (float): Minimum value for w0 parameter.
-    w0_max (float): Maximum value for w0 parameter.
-    w0_vary (bool or None): Whether to vary w0 parameter.
-    w1_value (float): Initial value for w1 parameter.
-    w1_vary (bool): Whether to vary w1 parameter.
-    c1_value (float): Initial value for c1 parameter.
-    c1_min (float): Minimum value for c1 parameter.
-    c1_max (float): Maximum value for c1 parameter.
-    c1_vary (bool): Whether to vary c1 parameter.
-    t1_value (float): Initial value for t1 parameter.
-    t1_min (float): Minimum value for t1 parameter.
-    t1_max (float): Maximum value for t1 parameter.
-    t1_vary (bool): Whether to vary t1 parameter.
-    c2_value (float): Initial value for c2 parameter.
-    c2_min (float or None): Minimum value for c2 parameter.
-    c2_max (float or None): Maximum value for c2 parameter.
-    c2_vary (bool or None): Whether to vary c2 parameter.
-    t2_value (float): Initial value for t2 parameter.
-    t2_min (float): Minimum value for t2 parameter.
-    t2_max (float): Maximum value for t2 parameter.
-    t2_vary (bool or None): Whether to vary t2 parameter.
-    c3_value (float): Initial value for c3 parameter.
-    c3_min (float or None): Minimum value for c3 parameter.
-    c3_max (float or None): Maximum value for c3 parameter.
-    c3_vary (bool or None): Whether to vary c3 parameter.
-    t3_value (float): Initial value for t3 parameter.
-    t3_min (float): Minimum value for t3 parameter.
-    t3_max (float): Maximum value for t3 parameter.
-    t3_vary (bool or None): Whether to vary t3 parameter.
-    c4_value (float): Initial value for c4 parameter.
-    c4_min (float or None): Minimum value for c4 parameter.
-    c4_max (float or None): Maximum value for c4 parameter.
-    c4_vary (bool or None): Whether to vary c4 parameter.
-    t4_value (float): Initial value for t4 parameter.
-    t4_min (float): Minimum value for t4 parameter.
-    t4_max (float): Maximum value for t4 parameter.
-    t4_vary (bool or None): Whether to vary t4 parameter.
-    w10_value (float): Initial value for w10 parameter.
-    w10_min (float): Minimum value for w10 parameter.
-    w10_max (float): Maximum value for w10 parameter.
-    w10_vary (bool): Whether to vary w10 parameter.
-    w11_value (float): Initial value for w11 parameter.
-    w11_min (float): Minimum value for w11 parameter.
-    w11_max (float): Maximum value for w11 parameter.
-    w11_vary (bool): Whether to vary w11 parameter.
-    w12_value (float): Initial value for w12 parameter.
-    w12_min (float): Minimum value for w12 parameter.
-    w12_max (float): Maximum value for w12 parameter.
-    w12_vary (bool): Whether to vary w12 parameter.
-    Returns:
-    lmfit.Parameters: Initialized parameters for the multiexponential function.    
-    '''
 
-    if w0_vary is None:
-        w0_vary = True
-    if c2_min is None:
-        c2_min = -0.2
-    if c2_max is None:
-        c2_max = 0.2
-    if c3_min is None:
-        c3_min = -0.2
-    if c3_max is None:
-        c3_max = 0.2
-    if c4_min is None:
-        c4_min = -0.2
-    if c4_max is None:
-        c4_max = 0.2
-
-
+def params_init(num_of_exp, w1_vary = None, w12_vary = None):
+    if w12_vary is None:
+        w12_vary = False
+    if w1_vary is None:
+        w1_vary = True
     params = lmfit.Parameters()
-    params.add("w0", value=w0_value, min=w0_min, max=w0_max, vary=w0_vary)
-    params.add("w1", value=w1_value, vary=w1_vary)
-    params.add("w2", value=c1_value, min=c1_min, max=c1_max, vary=c1_vary)
-    params.add("w3", value=t1_value, min=t1_min, max=t1_max, vary=t1_vary)
-
+    params.add('w0', value=0.1, min=0.05, max=0.2, vary = w1_vary)
+    params.add('w1', value=1.0, vary=False)
+    params.add('w2', value=0, min=-0.2, max=0.2)
+    params.add('w3', value=1, min=0.01, max=5000)
     if num_of_exp == 1:
         if c2_vary is None:
             c2_vary = True
