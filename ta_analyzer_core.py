@@ -384,7 +384,7 @@ class compare_traces:
                     1, -1
                 )
                 self.wavelength_list.append(wavelength)
-            except:
+            except AttributeError:
                 print("Invalid wavelength")
                 return
         self.trace_array = np.append(self.trace_array, trace_toadd, axis=0)
@@ -609,8 +609,8 @@ class plot_glotaran:
                 self.ax_traces_2.set_xlabel("Time (ps)")
                 self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
                 self.ax_traces.set_ylabel("Amplitude")
-        except:
-            print("No trace data found or error in loading trace data")
+        except Exception as e:
+            print(f"No trace data found or error in loading trace data: {e}")
 
 
 class tamatrix_importer:
@@ -879,7 +879,7 @@ class tamatrix_importer:
         time_temp = self.tatime.copy()
         try:
             oldmatrix = self.bgcorr.copy()
-        except:
+        except AttributeError:
             print("bgcorr matrix not found. zero time correction on original matrix")
             oldmatrix = self.tamatrix.copy()
         self.tcorr = np.zeros_like(self.tamatrix)
@@ -900,7 +900,7 @@ class tamatrix_importer:
         # Create contour plot
         fig, ax = plt.subplots()
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
-        contour = ax.contour(
+        ax.contour(
             X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01]
         )
         plt.ylim(-1, 1)
@@ -925,7 +925,7 @@ class tamatrix_importer:
         time_temp = self.tatime.copy()
         try:
             oldmatrix = self.bgcorr.copy()
-        except:
+        except Exception:
             print("bgcorr matrix not found. zero time correction on original matrix")
             oldmatrix = self.tamatrix.copy()
         self.tcorr = np.zeros_like(self.tamatrix)
@@ -946,7 +946,7 @@ class tamatrix_importer:
         # Create contour plot
         fig, ax = plt.subplots()
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
-        contour = ax.contour(
+        ax.contour(
             X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01]
         )
         plt.ylim(-1, 1)
@@ -960,7 +960,7 @@ class tamatrix_importer:
         """Export the background and zerotime corrected TA matrix to Glotaran input format (legacy JAVA version). Saved file will be named as filename+"glo.ascii"
         Don't need this array in pyglotaran.
         """
-        output_matrix = glotaran(self.tcorr, self.tatime, self.tawavelength)
+        glotaran(self.tcorr, self.tatime, self.tawavelength)
 
     def pyglotaran(self, mat=None):
         """
@@ -1002,11 +1002,11 @@ class tamatrix_importer:
         if mat is None:
             try:
                 matrix = self.tcorr.copy()
-            except:
+            except Exception:
                 try:
                     matrix = self.bgcorr.copy()
                     print("Background corrected matrix used")
-                except:
+                except Exception:
                     matrix = self.tamatrix.copy()
                     print("Original matrix used")
         elif mat == "original":
@@ -1019,11 +1019,11 @@ class tamatrix_importer:
             try:
                 matrix = self.tcorr.copy()
                 print("Invalid mat value. Use tcorrrected matrix")
-            except:
+            except Exception:
                 try:
                     matrix = self.bgcorr.copy()
                     print("Invalid mat value. Background corrected matrix used")
-                except:
+                except Exception:
                     matrix = self.tamatrix.copy()
                     print("Invalid mat value. Original matrix used")
         return matrix
