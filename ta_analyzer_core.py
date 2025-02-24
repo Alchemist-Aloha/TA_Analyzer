@@ -1,12 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
 # %matplotlib widget #uncomment for interactive plot
 from matplotlib.colors import ListedColormap
 import lmfit
 from scipy.stats import norm
 from tqdm import tqdm
 import xarray as xr
-'''
+
+"""
 
 from glotaran.optimization.optimize import optimize
 from glotaran.io import load_model
@@ -14,7 +16,7 @@ from glotaran.io import load_parameters
 from glotaran.io import save_dataset
 from glotaran.io.prepare_dataset import prepare_time_trace_dataset
 from glotaran.project.scheme import Scheme
-'''
+"""
 # load all and average the matrix
 
 
@@ -28,15 +30,16 @@ def mat_avg(name, select):
     Returns:
         str, str: The averaged matrix, the matrix array with all experiments loaded.
     """
-    first_array = np.loadtxt(name+str(select[0]+1))
+    first_array = np.loadtxt(name + str(select[0] + 1))
     rows, columns = first_array.shape
     mat_array = np.zeros((rows, columns, len(select)))
     for i, x in enumerate(select):
-        mat_array[:, :, i] = np.loadtxt(name+str(x+1))
+        mat_array[:, :, i] = np.loadtxt(name + str(x + 1))
     sum_array = np.sum(mat_array, axis=2)
     avg_array = sum_array / len(select)
-    np.savetxt(name+"averaged", avg_array, fmt="%f", delimiter="\t")
+    np.savetxt(name + "averaged", avg_array, fmt="%f", delimiter="\t")
     return avg_array, mat_array
+
 
 # load TaTime0
 
@@ -50,8 +53,9 @@ def load_tatime(mat):
     Returns:
         1darray: The time axis of the TA matrix
     """
-    tatime = mat[:mat.shape[1]-2, 0]
+    tatime = mat[: mat.shape[1] - 2, 0]
     return tatime
+
 
 # load tawavelength
 
@@ -70,8 +74,7 @@ def load_tawavelength(mat):
 
 
 class load_single:
-    """Class to load a single experiment TA spectrum
-    """
+    """Class to load a single experiment TA spectrum"""
 
     def __init__(self, file_name):
         """Initialize the class with the file name
@@ -93,28 +96,28 @@ class load_single:
             ylim (tuple, optional): y axis limit of TA spectrum. Defaults to None.
         """
         fig, self.ax = plt.subplots(nrows=2)
-        self.ax[1].plot(self.tawavelength, self.spec_ta, label='TA')
-        self.ax[0].plot(self.tawavelength, self.spec_on, label='ON')
-        self.ax[0].plot(self.tawavelength, self.spec_off, label='OFF')
+        self.ax[1].plot(self.tawavelength, self.spec_ta, label="TA")
+        self.ax[0].plot(self.tawavelength, self.spec_on, label="ON")
+        self.ax[0].plot(self.tawavelength, self.spec_off, label="OFF")
         self.ax[0].legend()
-        self.ax[1].set_xlabel('Wavelength (nm)')
-        self.ax[0].set_ylabel('ΔOD')
-        self.ax[1].set_ylabel('ΔOD')
+        self.ax[1].set_xlabel("Wavelength (nm)")
+        self.ax[0].set_ylabel("ΔOD")
+        self.ax[1].set_ylabel("ΔOD")
         self.ax[1].set_ylim(ylim)
-        self.ax[1].set_title('TA spectrum')
-        self.ax[0].set_title('On and Off spectrum')
+        self.ax[1].set_title("TA spectrum")
+        self.ax[0].set_title("On and Off spectrum")
         plt.show()
 
 
 class load_spectra:
     def __init__(self, file_inp, num_spec=None, select=None):
-        """ class to include single or multiple experiments (average) TA matrix
+        """class to include single or multiple experiments (average) TA matrix
 
         Args:
             file_inp (str): The name of the file to be loaded. e.g. "expt_". if num_spec = 1, file_inp should use full name, e.g. "expt_3".
             num_spec (int, optional): num_spec is the number of experiments to be loaded. e.g. 5. Note this will load expt_1, expt_2, expt_3, expt_4, expt_5. Defaults to None.
-            select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5]. 
-            Note this will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list. 
+            select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5].
+            Note this will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
             Use num_spec = 1 instead for single experiment. Defaults to None.
         """
 
@@ -127,8 +130,7 @@ class load_spectra:
         elif select is not None:
             self.select = select
             self.num_spec = len(self.select)
-            self.tamatrix_avg, self.mat_array = mat_avg(
-                self.file_inp, self.select)
+            self.tamatrix_avg, self.mat_array = mat_avg(self.file_inp, self.select)
             # load tatime and tawavelength axes
             self.tatime = load_tatime(self.tamatrix_avg)
             self.tawavelength = load_tawavelength(self.tamatrix_avg)
@@ -136,8 +138,7 @@ class load_spectra:
             self.num_spec = num_spec
             # average the matrix
             self.select = range(self.num_spec)
-            self.tamatrix_avg, self.mat_array = mat_avg(
-                self.file_inp, self.select)
+            self.tamatrix_avg, self.mat_array = mat_avg(self.file_inp, self.select)
             # load tatime and tawavelength axes
             self.tatime = load_tatime(self.tamatrix_avg)
             self.tawavelength = load_tawavelength(self.tamatrix_avg)
@@ -152,8 +153,9 @@ class load_spectra:
         if modifier is None:
             modifier = 1
         self.tamatrix_avg = self.tamatrix_avg - obj_bg.tamatrix_avg * modifier
-        self.mat_array = self.mat_array - \
-            obj_bg.tamatrix_avg[:, :, np.newaxis] * modifier
+        self.mat_array = (
+            self.mat_array - obj_bg.tamatrix_avg[:, :, np.newaxis] * modifier
+        )
 
     # plot 1ps spectrum
     def get_1ps(self):
@@ -164,12 +166,12 @@ class load_spectra:
         """
         diff = np.abs(self.tatime - 1)
         pt = pt = np.argmin(diff)
-        self.spec_1ps = self.tamatrix_avg[:, pt+2]
+        self.spec_1ps = self.tamatrix_avg[:, pt + 2]
         self.fig_s, self.ax_s = plt.subplots()
         self.ax_s.plot(self.tawavelength, self.spec_1ps)
         self.ax_s.set_title(self.file_inp)
-        self.ax_s.set_xlabel('Wavelength (nm)')
-        self.ax_s.set_ylabel('ΔOD')
+        self.ax_s.set_xlabel("Wavelength (nm)")
+        self.ax_s.set_ylabel("ΔOD")
         return self.spec_1ps
 
     # plot multiple parallel traces to see photodamage
@@ -189,29 +191,44 @@ class load_spectra:
         pt = np.argmin(diff)
         if self.num_spec == 1:
             self.trace_avg = self.tamatrix_avg[pt, 2:]
-            self.ax_k.plot(np.log(self.tatime), self.trace_avg,
-                           label=f'{wavelength} nm trace')
+            self.ax_k.plot(
+                np.log(self.tatime), self.trace_avg, label=f"{wavelength} nm trace"
+            )
         else:
             for i, x in enumerate(self.select):
                 self.trace_array[:, i] = self.mat_array[pt, 2:, i]
                 self.ax_k.plot(
-                    np.log(self.tatime), self.trace_array[:, i], label=f'{wavelength} nm trace {x+1}')
+                    np.log(self.tatime),
+                    self.trace_array[:, i],
+                    label=f"{wavelength} nm trace {x + 1}",
+                )
 
             self.trace_avg = self.tamatrix_avg[pt, 2:]
-            self.ax_k.plot(np.log(self.tatime), self.trace_avg,
-                           label=f'{wavelength} nm trace averaged')
+            self.ax_k.plot(
+                np.log(self.tatime),
+                self.trace_avg,
+                label=f"{wavelength} nm trace averaged",
+            )
         self.ax_k.legend()
-        self.ax_k.set_xlabel('Time (Log scale ps)')
-        self.ax_k.set_ylabel('ΔOD')
+        self.ax_k.set_xlabel("Time (Log scale ps)")
+        self.ax_k.set_ylabel("ΔOD")
         self.ax_k.set_title(self.file_inp)
 
         return self.trace_avg
-    
-    def fit_kinetic(self, wavelength, num_of_exp=None, params=None, time_split=None, w1_vary=None, w12_vary=None):
+
+    def fit_kinetic(
+        self,
+        wavelength,
+        num_of_exp=None,
+        params=None,
+        time_split=None,
+        w1_vary=None,
+        w12_vary=None,
+    ):
         if w1_vary is None:
-            w1_vary=True
+            w1_vary = True
         if w12_vary is None:
-            w12_vary=True
+            w12_vary = True
         if params is None:
             params = params_init(num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
         # plot spectra together
@@ -220,57 +237,75 @@ class load_spectra:
         y = self.trace_avg
         t = self.tatime
         lmodel = lmfit.Model(multiexp_func)
-        result = lmodel.fit(y, params=params, t=t, max_nfev=100000,
-                            ftol=1e-9, xtol=1e-9, nan_policy='omit')
+        result = lmodel.fit(
+            y,
+            params=params,
+            t=t,
+            max_nfev=100000,
+            ftol=1e-9,
+            xtol=1e-9,
+            nan_policy="omit",
+        )
         # print(result.fit_report())
-        print('-------------------------------')
+        print("-------------------------------")
         print(
-            f'{self.file_inp} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm')
-        print('-------------------------------')
-        print(f'chi-square: {result.chisqr:11.6f}')
+            f"{self.file_inp} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm"
+        )
+        print("-------------------------------")
+        print(f"chi-square: {result.chisqr:11.6f}")
         pearsonr = np.corrcoef(result.best_fit, y)[0, 1]
-        print(f'Pearson\'s R: {pearsonr:11.6f}')
-        print('-------------------------------')
-        print('Parameter    Value       Stderr')
+        print(f"Pearson's R: {pearsonr:11.6f}")
+        print("-------------------------------")
+        print("Parameter    Value       Stderr")
         for name, param in result.params.items():
-            print(f'{name:7s} {param.value:11.6f} {param.stderr:11.6f}')
-        print('-------------------------------')
+            print(f"{name:7s} {param.value:11.6f} {param.stderr:11.6f}")
+        print("-------------------------------")
         # result.plot_fit()
         if time_split is None:
             pt_split = find_closest_value([5], self.tatime)[0]
         else:
             pt_split = find_closest_value([time_split], self.tatime)[0]
-        fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True,
-                                       gridspec_kw={'width_ratios': [2, 3]})
+        fig, (ax1, ax2) = plt.subplots(
+            1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
+        )
         fig.subplots_adjust(wspace=0.05)
 
-        ax1.scatter(t[:pt_split], y[:pt_split], marker='o', color='black')
-        ax1.plot(t[:pt_split], result.best_fit[:pt_split], color='red')
-        ax1.set_xlim(t[0], t[pt_split-1])
+        ax1.scatter(t[:pt_split], y[:pt_split], marker="o", color="black")
+        ax1.plot(t[:pt_split], result.best_fit[:pt_split], color="red")
+        ax1.set_xlim(t[0], t[pt_split - 1])
         # ax1.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-        ax1.spines['right'].set_visible(False)
+        ax1.spines["right"].set_visible(False)
         ax1.tick_params(right=False)
 
-        ax2.scatter(t[pt_split:], y[pt_split:], marker='o', color='black',
-                    label=f"{self.tawavelength[wavelength_index]:.2f} nm")
-        ax2.plot(t[pt_split:], result.best_fit[pt_split:], color='red',
-                 label=f"{self.tawavelength[wavelength_index]:.2f} nm fit")
-        ax2.set_xscale('log')
-        ax2.set_xlim(t[pt_split-1], t[-1])
+        ax2.scatter(
+            t[pt_split:],
+            y[pt_split:],
+            marker="o",
+            color="black",
+            label=f"{self.tawavelength[wavelength_index]:.2f} nm",
+        )
+        ax2.plot(
+            t[pt_split:],
+            result.best_fit[pt_split:],
+            color="red",
+            label=f"{self.tawavelength[wavelength_index]:.2f} nm fit",
+        )
+        ax2.set_xscale("log")
+        ax2.set_xlim(t[pt_split - 1], t[-1])
         # ax2.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-        ax2.spines['left'].set_visible(False)
+        ax2.spines["left"].set_visible(False)
         ax2.tick_params(left=False)
 
         # Creating a gap between the subplots to indicate the broken axis
         gap = 0.1
-        ax1.spines['right'].set_position(('outward', gap))
-        ax2.spines['left'].set_position(('outward', gap))
-        ax1.axhline(0, color='black', linestyle='-', linewidth=0.5)
-        ax2.axhline(0, color='black', linestyle='-', linewidth=0.5)
+        ax1.spines["right"].set_position(("outward", gap))
+        ax2.spines["left"].set_position(("outward", gap))
+        ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
         # Centered title above subplots
-        fig.suptitle(self.file_inp, fontsize=10, ha='center')
-        plt.legend(loc='best')
-        fig.text(0.5, 0.04, 'Time (ps)', ha='center', fontsize=8)
+        fig.suptitle(self.file_inp, fontsize=10, ha="center")
+        plt.legend(loc="best")
+        fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
         plt.show()
         return result
@@ -293,22 +328,31 @@ class load_spectra:
         if self.num_spec == 1:
             print("single experiment. No burn correction")
         else:
-            percent_per_point = (self.mat_array[pt, pt2+2, 0]
-                                 - self.mat_array[pt, pt2+2, len(self.select)-1])/self.mat_array[pt, pt2+2, 0]/(len(self.tatime)*(len(self.select)-1))
-            burn_correction = 1 + percent_per_point*pts_time
-            self.ax_b.plot(pts_time, burn_correction, label='Burn correction')
+            percent_per_point = (
+                (
+                    self.mat_array[pt, pt2 + 2, 0]
+                    - self.mat_array[pt, pt2 + 2, len(self.select) - 1]
+                )
+                / self.mat_array[pt, pt2 + 2, 0]
+                / (len(self.tatime) * (len(self.select) - 1))
+            )
+            burn_correction = 1 + percent_per_point * pts_time
+            self.ax_b.plot(pts_time, burn_correction, label="Burn correction")
             self.ax_b.legend()
-            self.ax_b.set_xlabel('time point')
-            self.ax_b.set_ylabel('correction')
+            self.ax_b.set_xlabel("time point")
+            self.ax_b.set_ylabel("correction")
             self.tamatrix_avg_burncorr = self.tamatrix_avg.copy()
             self.tamatrix_avg_burncorr[:, 2:] *= burn_correction
-            np.savetxt(self.file_inp+"avg_burncorrected",
-                       self.tamatrix_avg_burncorr, fmt="%f", delimiter="\t")
+            np.savetxt(
+                self.file_inp + "avg_burncorrected",
+                self.tamatrix_avg_burncorr,
+                fmt="%f",
+                delimiter="\t",
+            )
 
 
 class compare_traces:
-    """compare traces from load_spectra object
-    """
+    """compare traces from load_spectra object"""
 
     def __init__(self, obj, wavelength):
         """initialize the class with the first load_spectra object and wavelength to compare
@@ -336,35 +380,38 @@ class compare_traces:
         """
         self.name_list.append(obj.file_inp)
         if wavelength is None:
-            trace_toadd = obj.get_traces(
-                self.wavelength, disable_plot=True).reshape(1, -1)
+            trace_toadd = obj.get_traces(self.wavelength, disable_plot=True).reshape(
+                1, -1
+            )
             self.wavelength_list.append(self.wavelength)
         else:
             try:
-                trace_toadd = obj.get_traces(
-                    wavelength, disable_plot=True).reshape(1, -1)
+                trace_toadd = obj.get_traces(wavelength, disable_plot=True).reshape(
+                    1, -1
+                )
                 self.wavelength_list.append(wavelength)
             except:
-                print('Invalid wavelength')
+                print("Invalid wavelength")
                 return
         self.trace_array = np.append(self.trace_array, trace_toadd, axis=0)
 
     def plot(self):
-        """plot the loaded traces
-        """
+        """plot the loaded traces"""
         self.fig, self.ax = plt.subplots()
         for i in range(len(self.trace_array)):
-            self.ax.plot(np.log(self.tatime), self.trace_array[i, :]/np.max(np.abs(
-                self.trace_array[i, :])), label=f'{self.name_list[i]} @ {self.wavelength_list[i]} nm')
+            self.ax.plot(
+                np.log(self.tatime),
+                self.trace_array[i, :] / np.max(np.abs(self.trace_array[i, :])),
+                label=f"{self.name_list[i]} @ {self.wavelength_list[i]} nm",
+            )
         self.ax.legend()
-        self.ax.set_title('Normalized traces with logarithmic time axis')
-        self.ax.set_xlabel('Time (Log scale ps)')
-        self.ax.set_ylabel('ΔOD')
+        self.ax.set_title("Normalized traces with logarithmic time axis")
+        self.ax.set_xlabel("Time (Log scale ps)")
+        self.ax.set_ylabel("ΔOD")
 
 
 class glotaran:
-    """Class to export the IGOR generated TAmatrix to Glotaran input format
-    """
+    """Class to export the IGOR generated TAmatrix to Glotaran input format"""
 
     def __init__(self, matrix_corr, tatime, tawavelength):
         """Initialize the class with the TA matrix (Output from IGOR macro auto_tcorr. Without time and wavelength axis.
@@ -372,7 +419,7 @@ class glotaran:
         Output file will be named as matrix_corr+"glo.ascii"
 
         Args:
-            matrix_corr (str): The filename of the TA matrix file to be loaded. 
+            matrix_corr (str): The filename of the TA matrix file to be loaded.
             tatime (str): The filename of the time axis
             tawavelength (str): The filename of the wavelength axis
         """
@@ -381,15 +428,28 @@ class glotaran:
         self.tawavelength = np.loadtxt(tawavelength)
         # np.genfromtext will read nan as nan, avoid size mismatch with np.loadtxt
         self.output_matrix = np.genfromtxt(
-            matrix_corr, delimiter='\t', filling_values=np.nan)
+            matrix_corr, delimiter="\t", filling_values=np.nan
+        )
         self.output_matrix = np.append(
-            self.tatime.reshape(1, -1), self.output_matrix, axis=0)
+            self.tatime.reshape(1, -1), self.output_matrix, axis=0
+        )
         self.output_matrix = np.append(
-            np.append("", self.tawavelength).reshape(1, -1).T, self.output_matrix, axis=1)
-        self.header = self.filename + \
-            '\n\nTime explicit\nintervalnr ' + str(len(self.tatime))
-        np.savetxt(self.filename.split(".")[0]+".ascii", self.output_matrix,
-                   header=self.header, fmt='%s', comments='', delimiter='\t')
+            np.append("", self.tawavelength).reshape(1, -1).T,
+            self.output_matrix,
+            axis=1,
+        )
+        self.header = (
+            self.filename + "\n\nTime explicit\nintervalnr " + str(len(self.tatime))
+        )
+        np.savetxt(
+            self.filename.split(".")[0] + ".ascii",
+            self.output_matrix,
+            header=self.header,
+            fmt="%s",
+            comments="",
+            delimiter="\t",
+        )
+
 
 class merge_glotaran:
     def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
@@ -401,14 +461,25 @@ class merge_glotaran:
             print("Time axis mismatch")
         self.vis_max_pt = np.argmin(np.abs(self.glotaran_vis.tawavelength - vis_max))
         self.ir_min_pt = np.argmin(np.abs(self.glotaran_ir.tawavelength - ir_min))
-        self.output_matrix = np.vstack((self.glotaran_vis.output_matrix[0:self.vis_max_pt+1, :], self.glotaran_ir.output_matrix[self.ir_min_pt:, :]))
+        self.output_matrix = np.vstack(
+            (
+                self.glotaran_vis.output_matrix[0 : self.vis_max_pt + 1, :],
+                self.glotaran_ir.output_matrix[self.ir_min_pt :, :],
+            )
+        )
         self.header = self.glotaran_vis.header
-        np.savetxt(self.glotaran_vis.filename.split(".")[0]+"_ir_merged.ascii", self.output_matrix,
-                   header=self.header, fmt='%s', comments='', delimiter='\t')
-        
+        np.savetxt(
+            self.glotaran_vis.filename.split(".")[0] + "_ir_merged.ascii",
+            self.output_matrix,
+            header=self.header,
+            fmt="%s",
+            comments="",
+            delimiter="\t",
+        )
+
+
 class load_glotaran:
-    """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis
-    """
+    """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis"""
 
     def __init__(self, dir):
         """Initialize the class with the Glotaran input file
@@ -417,8 +488,8 @@ class load_glotaran:
             dir (str): The filename of the Glotaran input file
         """
         self.filename = dir
-        matrix = np.loadtxt(dir, skiprows=4, delimiter='\t', dtype=str)
-        matrix[matrix == ''] = np.nan
+        matrix = np.loadtxt(dir, skiprows=4, delimiter="\t", dtype=str)
+        matrix[matrix == ""] = np.nan
         matrix = matrix.astype(np.float64)
         self.tatime = matrix[0, 1:]
         self.tawavelength = matrix[1:, 0]
@@ -434,18 +505,20 @@ class plot_glotaran:
         self.filename = dir
         rate_list = []
         error_list = []
-        with open(dir + "_summary.txt", 'r') as file:
+        with open(dir + "_summary.txt", "r") as file:
             find_rate = False
             for line in file:
                 stripped_line = line.strip()
                 if stripped_line.startswith("Estimated Kinetic parameters: Dataset1:"):
                     # Split the line by spaces or commas and convert to float
                     rate_list = [
-                        value for value in stripped_line.replace(',', ' ').split()]
+                        value for value in stripped_line.replace(",", " ").split()
+                    ]
                     find_rate = True
                 if find_rate is True and stripped_line.startswith("Standard errors:"):
                     error_list = [
-                        value for value in stripped_line.replace(',', ' ').split()]
+                        value for value in stripped_line.replace(",", " ").split()
+                    ]
                     find_rate = False
         # Convert the list of rate and error to a NumPy array
         self.rate_array = np.array(rate_list[4:]).astype(float)
@@ -456,17 +529,23 @@ class plot_glotaran:
         self.fig_das, self.ax_das = plt.subplots(figsize=(6, 3))
         self.fig_das.subplots_adjust(left=0.2)
         self.fig_traces, (self.ax_traces, self.ax_traces_2) = plt.subplots(
-            1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor='w', figsize=(6, 3))
+            1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor="w", figsize=(6, 3)
+        )
         self.fig_traces.subplots_adjust(wspace=0.1)
-        if self.das.shape[1] != 2*self.rate_array.shape[0]:
+        if self.das.shape[1] != 2 * self.rate_array.shape[0]:
             print("das and rate array size mismatch")
-        for i in range(int(self.das.shape[1]/2)):
-            self.ax_das.plot(self.das[:, 2*i], self.das[:, 2*i+1], label='Long-term' if 1 /
-                             self.rate_array[i] > 10000.0 else f'{1/self.rate_array[i]:.2f} ps')
+        for i in range(int(self.das.shape[1] / 2)):
+            self.ax_das.plot(
+                self.das[:, 2 * i],
+                self.das[:, 2 * i + 1],
+                label="Long-term"
+                if 1 / self.rate_array[i] > 10000.0
+                else f"{1 / self.rate_array[i]:.2f} ps",
+            )
             colorwaves(self.ax_das)
             self.ax_das.legend()
-            self.ax_das.set_xlabel('Wavelength (nm)')
-            self.ax_das.set_ylabel('DAS')
+            self.ax_das.set_xlabel("Wavelength (nm)")
+            self.ax_das.set_ylabel("DAS")
             # print(self.das[:,i], self.das[:,i+1])
         self.ax_das.axhline(y=0, c="black", linewidth=0.5, zorder=0)
 
@@ -474,54 +553,86 @@ class plot_glotaran:
         try:
             self.traces = np.loadtxt(dir + "_traces.ascii", skiprows=1)
             self.fig_traces, (self.ax_traces, self.ax_traces_2) = plt.subplots(
-                1, 2, width_ratios=[0.3, 0.7], sharey=True, facecolor='w', figsize=(6, 3))
+                1,
+                2,
+                width_ratios=[0.3, 0.7],
+                sharey=True,
+                facecolor="w",
+                figsize=(6, 3),
+            )
             self.fig_traces.subplots_adjust(wspace=0.1)
-            for i in range(int(self.traces.shape[1]/2)):
+            for i in range(int(self.traces.shape[1] / 2)):
                 # p = find_closest_value([5],self.traces[:,0])[0]
                 # time_log = np.concatenate((self.traces[:p,2*i],np.log10(self.traces[p:,2*i])),axis=0)
                 self.ax_traces.plot(
-                    self.traces[:, 2*i], self.traces[:, 2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
+                    self.traces[:, 2 * i],
+                    self.traces[:, 2 * i + 1],
+                    label=f"Trace {1 / self.rate_array[i]:.2f} ps",
+                )
                 self.ax_traces_2.plot(
-                    self.traces[:, 2*i], self.traces[:, 2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
+                    self.traces[:, 2 * i],
+                    self.traces[:, 2 * i + 1],
+                    label=f"Trace {1 / self.rate_array[i]:.2f} ps",
+                )
                 self.ax_traces.set_xlim(-1, 1)
-                self.ax_traces_2.set_xlim(1, len(self.traces[:, 2*i]))
-                self.ax_traces.spines['right'].set_visible(False)
-                self.ax_traces_2.spines['left'].set_visible(False)
+                self.ax_traces_2.set_xlim(1, len(self.traces[:, 2 * i]))
+                self.ax_traces.spines["right"].set_visible(False)
+                self.ax_traces_2.spines["left"].set_visible(False)
                 self.ax_traces.yaxis.tick_left()
                 self.ax_traces.tick_params(labelright=False)
-                self.ax_traces_2.tick_params(axis='y', labelleft=False)
+                self.ax_traces_2.tick_params(axis="y", labelleft=False)
                 self.ax_traces_2.yaxis.tick_right()
-                d = .5  # proportion of vertical to horizontal extent of the slanted line
-                kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
-                            linestyle="none", color='k', mec='k', mew=1, clip_on=False)
+                d = 0.5  # proportion of vertical to horizontal extent of the slanted line
+                kwargs = dict(
+                    marker=[(-1, -d), (1, d)],
+                    markersize=12,
+                    linestyle="none",
+                    color="k",
+                    mec="k",
+                    mew=1,
+                    clip_on=False,
+                )
                 self.ax_traces.plot(
-                    [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs)
+                    [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs
+                )
                 self.ax_traces_2.plot(
-                    [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs)
+                    [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs
+                )
                 colorwaves(self.ax_traces)
                 colorwaves(self.ax_traces_2)
                 # self.ax_traces.plot(time_log, self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
-                self.ax_traces_2.legend(loc='center right')
-                self.ax_traces_2.set_xscale('log')
-                self.ax_traces_2.set_xlabel('Time (ps)')
+                self.ax_traces_2.legend(loc="center right")
+                self.ax_traces_2.set_xscale("log")
+                self.ax_traces_2.set_xlabel("Time (ps)")
                 self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
-                self.ax_traces.set_ylabel('Amplitude')
+                self.ax_traces.set_ylabel("Amplitude")
         except:
-            print('No trace data found or error in loading trace data')
+            print("No trace data found or error in loading trace data")
+
 
 class tamatrix_importer:
-    """Class to import the TA matrix from the file. The input may vary from filename to Load_spectra object or load_glotaran object
-    """
+    """Class to import the TA matrix from the file. The input may vary from filename to Load_spectra object or load_glotaran object"""
 
-    def __init__(self, filename=None, startnm=None, endnm=None, load_spectra=None, load_glotaran=None, tamatrix=None, tatime=None, tawavelength=None, name=None):
+    def __init__(
+        self,
+        filename=None,
+        startnm=None,
+        endnm=None,
+        load_spectra=None,
+        load_glotaran=None,
+        tamatrix=None,
+        tatime=None,
+        tawavelength=None,
+        name=None,
+    ):
         """Initialize the class with the filename, start and end wavelength to be loaded. If no filename is given, the object can be loaded from Load_spectra object or load_glotaran object
 
         Args:
-            filename (str, optional): The filename of the TA matrix file to be loaded. 
+            filename (str, optional): The filename of the TA matrix file to be loaded.
             startnm (num, optional): The start wavelength to be loaded. Defaults to 0.
             endnm (num, optional): The end wavelength to be loaded. Defaults to 1200 nm.
-            load_spectra (load_spectra, optional): The load_spectra object to be loaded. 
-            load_glotaran (load_glotaran, optional): The load_glotaran object to be loaded. 
+            load_spectra (load_spectra, optional): The load_spectra object to be loaded.
+            load_glotaran (load_glotaran, optional): The load_glotaran object to be loaded.
             tamatrix (str, optional): The filename of the TA matrix file to be loaded. NOT WORKING.
             tatime (str, optional): The filename of the time axis file to be loaded. NOT WORKING.
             tawavelength (str, optional): The filename of the wavelength axis file to be loaded. NOT WORKING.
@@ -558,18 +669,25 @@ class tamatrix_importer:
 
             # Load TAwavelength waves
             self.tawavelength = np.loadtxt(
-                self.filename, skiprows=self.startrow, max_rows=self.endrow-self.startrow)[:, 1]
+                self.filename,
+                skiprows=self.startrow,
+                max_rows=self.endrow - self.startrow,
+            )[:, 1]
             # np.savetxt(self.filename+"_tawavelength",tawavelength,fmt='%1.5f')
 
             # Trim TAtime wave
             self.tatime = np.loadtxt(self.filename)[:, 0]
-            idx = np.loadtxt(self.filename).shape[1]-2
+            idx = np.loadtxt(self.filename).shape[1] - 2
             self.tatime = self.tatime[:idx]
             # np.savetxt(self.filename+"_tatime",tatime,fmt='%1.5f')
 
             # Load TAmatrix waves
-            self.tamatrix = np.loadtxt(self.filename, skiprows=self.startrow,
-                                       max_rows=self.endrow-self.startrow, usecols=np.arange(2, idx+2))
+            self.tamatrix = np.loadtxt(
+                self.filename,
+                skiprows=self.startrow,
+                max_rows=self.endrow - self.startrow,
+                usecols=np.arange(2, idx + 2),
+            )
             # np.savetxt(self.filename+"_tamatrix",self.tamatrix,fmt='%1.5f'
 
         elif load_spectra is not None:
@@ -602,8 +720,13 @@ class tamatrix_importer:
             time_max (num): upper limit of time axis
         """
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
-        plt.contourf(X, Y, self.tamatrix,
-                     [-0.005, -0.001, -0.0005, 0, 0.0005, 0.001, 0.005], cmap='rainbow')
+        plt.contourf(
+            X,
+            Y,
+            self.tamatrix,
+            [-0.005, -0.001, -0.0005, 0, 0.0005, 0.001, 0.005],
+            cmap="rainbow",
+        )
         plt.ylim(time_min, time_max)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Time (ps)")
@@ -617,21 +740,21 @@ class tamatrix_importer:
             filename (str): directory to save the files. e.g. "C:/Users/xxx"
             mat (str): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         """
-        if mat == 'original':
+        if mat == "original":
             matrix = self.tamatrix.copy()
             print("Original matrix is selected\n")
-        elif mat == 'bgcorr':
+        elif mat == "bgcorr":
             matrix = self.bgcorr.copy()
             print("Background corrected matrix is selected\n")
         else:
             matrix = self.tcorr.copy()
             print("Background and Zero time corrected matrix is selected\n")
-        np.savetxt(filename+"_tawavelength", self.tawavelength, fmt='%1.5f')
-        print(filename+"_tawavelength has been saved\n")
-        np.savetxt(filename+"_tatime", self.tatime, fmt='%1.5f')
-        print(filename+"_tatime has been saved\n")
-        np.savetxt(filename+"_tamatrix", matrix, fmt='%1.5f')
-        print(filename+"_tatime has been saved\n")
+        np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
+        print(filename + "_tawavelength has been saved\n")
+        np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
+        print(filename + "_tatime has been saved\n")
+        np.savetxt(filename + "_tamatrix", matrix, fmt="%1.5f")
+        print(filename + "_tatime has been saved\n")
 
     def save_tamatrix(self, filename, mat=None):
         """Save the TA matrix. Saved file will be named as filename+"_tamatrix"
@@ -643,10 +766,10 @@ class tamatrix_importer:
         if mat is None:
             matrix = self.tcorr.copy()
             print("Background and Zero time corrected matrix is selected\n")
-        if mat == 'original':
+        if mat == "original":
             matrix = self.tamatrix.copy()
             print("Original matrix is selected\n")
-        elif mat == 'bgcorr':
+        elif mat == "bgcorr":
             matrix = self.bgcorr.copy()
             print("Background corrected matrix is selected\n")
         else:
@@ -655,7 +778,7 @@ class tamatrix_importer:
         if filename == self.filename:
             print("Cannot overwrite original matrix, choose another name\n")
         else:
-            np.savetxt(filename+"_tamatrix", matrix, fmt='%1.5f')
+            np.savetxt(filename + "_tamatrix", matrix, fmt="%1.5f")
 
     def save_tatime(self, filename):
         """Save the time axis. Saved file will be named as filename+"_tatime"
@@ -663,7 +786,7 @@ class tamatrix_importer:
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
-        np.savetxt(filename+"_tatime", self.tatime, fmt='%1.5f')
+        np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
 
     def save_tawavelength(self, filename):
         """Save the wavelength axis. Saved file will be named as filename+"_tawavelength"
@@ -671,7 +794,7 @@ class tamatrix_importer:
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
-        np.savetxt(filename+"_tawavelength", self.tawavelength, fmt='%1.5f')
+        np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
 
     def save_axes(self, filename):
         """Save the time and wavelength axes. Saved files will be named as filename+"_tatime" and filename+"_tawavelength"
@@ -679,8 +802,8 @@ class tamatrix_importer:
         Args:
             filename (str): directory to save the files. e.g. "C:/Users/xxx"
         """
-        np.savetxt(filename+"_tatime", self.tatime, fmt='%1.5f')
-        np.savetxt(filename+"_tawavelength", self.tawavelength, fmt='%1.5f')
+        np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
+        np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
 
     def auto_bgcorr(self, points):
         """Background correction of the TA matrix using the negative time points. The number of time points taken as background should be given as input
@@ -696,7 +819,7 @@ class tamatrix_importer:
         for i in range(points):
             npavg += self.tamatrix[:, i]
 
-        print("The number of time points taken as background: "+str(i+1))
+        print("The number of time points taken as background: " + str(i + 1))
         npavg /= points
         # np.savetxt(self.filename+"_tamatrix_npavg", npavg, fmt='%1.5f')
         for x in range(self.tamatrix.shape[1]):
@@ -706,8 +829,13 @@ class tamatrix_importer:
         # Create a figure and axis for the contour plot
         # Create contour plot
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
-        plt.contourf(X, Y, self.bgcorr, [-0.005, -0.001, -0.0005,
-                                         0, 0.0005, 0.001, 0.005], cmap='rainbow')
+        plt.contourf(
+            X,
+            Y,
+            self.bgcorr,
+            [-0.005, -0.001, -0.0005, 0, 0.0005, 0.001, 0.005],
+            cmap="rainbow",
+        )
         plt.ylim(-1, 1)
         plt.colorbar()
         plt.xlabel("Wavelength (nm)")
@@ -749,17 +877,17 @@ class tamatrix_importer:
         try:
             oldmatrix = self.bgcorr.copy()
         except:
-            print('bgcorr matrix not found. zero time correction on original matrix')
+            print("bgcorr matrix not found. zero time correction on original matrix")
             oldmatrix = self.tamatrix.copy()
         self.tcorr = np.zeros_like(self.tamatrix)
 
         for i in range(len(self.tawavelength)):
             # Tatime axis minus time offset from the drawn line
-            time_temp = self.tatime + \
-                np.interp(self.tawavelength[i], zerotime_x, zerotime_y)
+            time_temp = self.tatime + np.interp(
+                self.tawavelength[i], zerotime_x, zerotime_y
+            )
             # extrapolate TAsignal to match corrected time axis
-            self.tcorr[i, :] = np.interp(
-                time_temp, self.tatime, oldmatrix[i, :])
+            self.tcorr[i, :] = np.interp(time_temp, self.tatime, oldmatrix[i, :])
             # Add the following smoothing line to clean up the spectra, with a slight loss in time resolution.
             # newmatrix[i, :] = np.convolve(kin_temp2[i, :], np.ones(3)/3, mode='same')
         # save tcorred matrix
@@ -770,7 +898,8 @@ class tamatrix_importer:
         fig, ax = plt.subplots()
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
         contour = ax.contour(
-            X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01])
+            X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01]
+        )
         plt.ylim(-1, 1)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Time (ps)")
@@ -794,17 +923,17 @@ class tamatrix_importer:
         try:
             oldmatrix = self.bgcorr.copy()
         except:
-            print('bgcorr matrix not found. zero time correction on original matrix')
+            print("bgcorr matrix not found. zero time correction on original matrix")
             oldmatrix = self.tamatrix.copy()
         self.tcorr = np.zeros_like(self.tamatrix)
 
         for i in range(len(self.tawavelength)):
             # Tatime axis minus time offset from the drawn line
-            time_temp = self.tatime + \
-                np.interp(self.tawavelength[i], zerotime_x, zerotime_y)
+            time_temp = self.tatime + np.interp(
+                self.tawavelength[i], zerotime_x, zerotime_y
+            )
             # extrapolate TAsignal to match corrected time axis
-            self.tcorr[i, :] = np.interp(
-                time_temp, self.tatime, oldmatrix[i, :])
+            self.tcorr[i, :] = np.interp(time_temp, self.tatime, oldmatrix[i, :])
             # Add the following smoothing line to clean up the spectra, with a slight loss in time resolution.
             # newmatrix[i, :] = np.convolve(kin_temp2[i, :], np.ones(3)/3, mode='same')
         # save tcorred matrix
@@ -815,7 +944,8 @@ class tamatrix_importer:
         fig, ax = plt.subplots()
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
         contour = ax.contour(
-            X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01])
+            X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01]
+        )
         plt.ylim(-1, 1)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Time (ps)")
@@ -830,7 +960,7 @@ class tamatrix_importer:
         output_matrix = glotaran(self.tcorr, self.tatime, self.tawavelength)
 
     def pyglotaran(self, mat=None):
-        '''
+        """
         export tcorr matrix to pyglotaran xarray dataset
         e.g.
         dataset = tamatrix.pyglotaran()
@@ -839,20 +969,20 @@ class tamatrix_importer:
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         return:
             xarray dataset
-        '''
+        """
         time_vals = self.tatime
         spectral_vals = self.tawavelength
         data_vals = self.mat_selector(mat).T
 
         # Define dimensions and coordinates
-        dims = ('time', 'spectral')
-        coords = {'time': time_vals, 'spectral': spectral_vals}
+        dims = ("time", "spectral")
+        coords = {"time": time_vals, "spectral": spectral_vals}
 
         # Create xarray dataset
         dataset = xr.Dataset(
-            {'data': (dims, data_vals)},
+            {"data": (dims, data_vals)},
             coords=coords,
-            attrs={'source_path': 'dataset_1.nc'}
+            attrs={"source_path": "dataset_1.nc"},
         )
         print(dataset)
         return dataset
@@ -872,27 +1002,27 @@ class tamatrix_importer:
             except:
                 try:
                     matrix = self.bgcorr.copy()
-                    print('Background corrected matrix used')
+                    print("Background corrected matrix used")
                 except:
                     matrix = self.tamatrix.copy()
-                    print('Original matrix used')
-        elif mat == 'original':
+                    print("Original matrix used")
+        elif mat == "original":
             matrix = self.tamatrix.copy()
-        elif mat == 'bgcorr':
+        elif mat == "bgcorr":
             matrix = self.bgcorr.copy()
-        elif mat == 'tcorr':
+        elif mat == "tcorr":
             matrix = self.tcorr.copy()
         else:
             try:
                 matrix = self.tcorr.copy()
-                print('Invalid mat value. Use tcorrrected matrix')
+                print("Invalid mat value. Use tcorrrected matrix")
             except:
                 try:
                     matrix = self.bgcorr.copy()
-                    print('Invalid mat value. Background corrected matrix used')
+                    print("Invalid mat value. Background corrected matrix used")
                 except:
                     matrix = self.tamatrix.copy()
-                    print('Invalid mat value. Original matrix used')
+                    print("Invalid mat value. Original matrix used")
         return matrix
 
     def auto_taspectra(self, time_pts=None, mat=None):
@@ -907,9 +1037,26 @@ class tamatrix_importer:
         """
 
         if time_pts is None:
-            time_pts = [-0.5, -0.2, 0, 0.1, 0.2, 0.5, 1, 2,
-                        5, 10, 20, 50, 100, 200, 500, 1000, 1500]
-        '''
+            time_pts = [
+                -0.5,
+                -0.2,
+                0,
+                0.1,
+                0.2,
+                0.5,
+                1,
+                2,
+                5,
+                10,
+                20,
+                50,
+                100,
+                200,
+                500,
+                1000,
+                1500,
+            ]
+        """
         if mat is None:
             try:   
                 matrix = self.tcorr.copy()
@@ -937,7 +1084,7 @@ class tamatrix_importer:
                 except:
                     matrix = self.tamatrix.copy()
                     print('Invalid mat value. Original matrix used')
-        '''
+        """
         matrix = self.mat_selector(mat)
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
@@ -949,21 +1096,28 @@ class tamatrix_importer:
         for i in range(len(time_index)):
             spec = matrix[:, time_index[i]]
             self.spectra_set = np.c_[self.spectra_set, spec]
-            plt.plot(self.tawavelength, spec, label='{:.2f}'.format(
-                self.tatime[time_index[i]])+" ps", color=cmap(i), linewidth=0.5)
+            plt.plot(
+                self.tawavelength,
+                spec,
+                label="{:.2f}".format(self.tatime[time_index[i]]) + " ps",
+                color=cmap(i),
+                linewidth=0.5,
+            )
         # plt.ylim(-0.05,0.05)
         plt.title(self.filename)
-        plt.rcParams.update({
-            'font.size': 8,      # Default font size
-            'axes.labelsize': 8,  # Label size for x and y axes
-            'axes.titlesize': 8,  # Title size
-            'xtick.labelsize': 8,  # Tick label size for x axis
-            'ytick.labelsize': 8  # Tick label size for y axis
-        })
-        plt.axhline(0, color='black', linestyle='-', linewidth=0.5)
+        plt.rcParams.update(
+            {
+                "font.size": 8,  # Default font size
+                "axes.labelsize": 8,  # Label size for x and y axes
+                "axes.titlesize": 8,  # Title size
+                "xtick.labelsize": 8,  # Tick label size for x axis
+                "ytick.labelsize": 8,  # Tick label size for y axis
+            }
+        )
+        plt.axhline(0, color="black", linestyle="-", linewidth=0.5)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("ΔOD")
-        plt.legend(loc='best')
+        plt.legend(loc="best")
         plt.show()
         return self.spectra_set, time_index
 
@@ -978,24 +1132,51 @@ class tamatrix_importer:
         if name is None:
             name = self.filename
         self.spectra_set, time_index = self.auto_taspectra(time_pts, mat)
-        header_str = 'Wavelength\t'
+        header_str = "Wavelength\t"
         for time in time_index:
-            header_str = header_str+"s_"+name+"_" + \
-                '{:.2f}'.format(self.tatime[time])+"ps\t"
-        np.savetxt("s_"+name, self.spectra_set,
-                   header=header_str, fmt='%1.5f', delimiter='\t')
-        print("File s_"+name+" has been saved\n")
+            header_str = (
+                header_str
+                + "s_"
+                + name
+                + "_"
+                + "{:.2f}".format(self.tatime[time])
+                + "ps\t"
+            )
+        np.savetxt(
+            "s_" + name,
+            self.spectra_set,
+            header=header_str,
+            fmt="%1.5f",
+            delimiter="\t",
+        )
+        print("File s_" + name + " has been saved\n")
 
-    def get_spectrum(self, name, time_pt, mat=None,):
+    def get_spectrum(
+        self,
+        name,
+        time_pt,
+        mat=None,
+    ):
         matrix = self.mat_selector(mat)
         diff = self.tatime.copy() - time_pt
         index = np.argmin(np.abs(diff))
         np.savetxt(
-            "s_"+name+"_"+'{:.2f}'.format(self.tatime[index])+" ps", matrix[:, index], fmt='%1.5f')
-        print("File s_"+name+"_" +
-              '{:.2f}'.format(self.tatime[index])+" ps has been saved\n")
-        plt.plot(self.tawavelength, matrix[:, index], label='{:.2f}'.format(
-            self.tatime[index])+" ps")
+            "s_" + name + "_" + "{:.2f}".format(self.tatime[index]) + " ps",
+            matrix[:, index],
+            fmt="%1.5f",
+        )
+        print(
+            "File s_"
+            + name
+            + "_"
+            + "{:.2f}".format(self.tatime[index])
+            + " ps has been saved\n"
+        )
+        plt.plot(
+            self.tawavelength,
+            matrix[:, index],
+            label="{:.2f}".format(self.tatime[index]) + " ps",
+        )
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("ΔOD")
         plt.legend()
@@ -1005,54 +1186,67 @@ class tamatrix_importer:
     def return_spectrum(self, tamatrix, time_pt):
         diff = self.tatime.copy() - time_pt
         index = np.argmin(np.abs(diff))
-        plt.plot(self.tawavelength, tamatrix[:, index], label='{:.2f}'.format(
-            self.tatime[index])+"ps")
+        plt.plot(
+            self.tawavelength,
+            tamatrix[:, index],
+            label="{:.2f}".format(self.tatime[index]) + "ps",
+        )
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("ΔOD")
         plt.legend()
         plt.show()
         return tamatrix[:, index]
 
-    def auto_takinetics(self, wavelength_pts, mat=None):
+    def auto_takinetics(self, wavelength_pts, mat=None, tmax = 1000):
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
-        wavelength_index = find_closest_value(
-            wavelength_pts, self.tawavelength)
+        wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
         matrix = self.mat_selector(mat)
         # plot spectra together
         plt.figure(figsize=(7, 4))
         for i in range(len(wavelength_index)):
             spec = matrix[wavelength_index[i], :].T
-            plt.plot(self.tatime, spec, label='{:.2f}'.format(
-                self.tawavelength[wavelength_index[i]])+" nm", linewidth=1)
+            plt.plot(
+                self.tatime,
+                spec,
+                label="{:.2f}".format(self.tawavelength[wavelength_index[i]]) + " nm",
+                linewidth=1,
+            )
         plt.title(self.filename)
-        plt.rcParams.update({
-            'font.size': 8,      # Default font size
-            'axes.labelsize': 8,  # Label size for x and y axes
-            'axes.titlesize': 8,  # Title size
-            'xtick.labelsize': 8,  # Tick label size for x axis
-            'ytick.labelsize': 8  # Tick label size for y axis
-        })
+        plt.rcParams.update(
+            {
+                "font.size": 8,  # Default font size
+                "axes.labelsize": 8,  # Label size for x and y axes
+                "axes.titlesize": 8,  # Title size
+                "xtick.labelsize": 8,  # Tick label size for x axis
+                "ytick.labelsize": 8,  # Tick label size for y axis
+            }
+        )
         plt.xlabel("Time (ps)")
         plt.ylabel("ΔOD")
-        plt.xlim(-1, 100)
-        plt.axhline(0, color='black', linestyle='-', linewidth=0.5)
-        plt.legend(loc='best')
+        plt.xlim(-1, tmax)
+        plt.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        plt.legend(loc="best")
         plt.show()
 
     def save_takinetics(self, name, wavelength_pts, mat):
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
-        wavelength_index = find_closest_value(
-            wavelength_pts, self.tawavelength)
+        wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
         self.kinetics_set = self.tatime.copy()
-        header_str = 'Time(ps)\t'
+        header_str = "Time(ps)\t"
         for wavelength in wavelength_index:
-            header_str = header_str+"k_"+name+"_" + \
-                '{:.2f}'.format(self.tawavelength[wavelength])+"nm\t"
-        if mat == 'original':
+            header_str = (
+                header_str
+                + "k_"
+                + name
+                + "_"
+                + "{:.2f}".format(self.tawavelength[wavelength])
+                + "nm\t"
+            )
+        if mat == "original":
             matrix = self.tamatrix.copy()
-        elif mat == 'bgcorr':
+        elif mat == "bgcorr":
             matrix = self.bgcorr.copy()
         else:
             matrix = self.tcorr.copy()
@@ -1061,10 +1255,18 @@ class tamatrix_importer:
         for i in range(len(wavelength_index)):
             spec = matrix[wavelength_index[i], :].T
             self.kinetics_set = np.c_[self.kinetics_set, spec]
-            plt.plot(self.tatime, spec, label='{:.2f}'.format(
-                self.tawavelength[wavelength_index[i]])+" nm")
-        np.savetxt("k_"+name, self.kinetics_set,
-                   header=header_str, fmt='%1.5f', delimiter='\t')
+            plt.plot(
+                self.tatime,
+                spec,
+                label="{:.2f}".format(self.tawavelength[wavelength_index[i]]) + " nm",
+            )
+        np.savetxt(
+            "k_" + name,
+            self.kinetics_set,
+            header=header_str,
+            fmt="%1.5f",
+            delimiter="\t",
+        )
         plt.xlabel("Time (ps)")
         plt.ylabel("ΔOD")
         plt.legend()
@@ -1077,10 +1279,21 @@ class tamatrix_importer:
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength_pt)
         wavelength_index = np.argmin(np.abs(diff))
-        plt.plot(self.tatime, matrix[wavelength_index, :], label='{:.2f}'.format(
-            self.tawavelength[wavelength_index])+" nm")
-        np.savetxt("k_"+name+"_"+'{:.2f}'.format(
-            self.tawavelength[wavelength_index])+"nm", matrix[wavelength_index, :].T, fmt='%1.5f', delimiter='\t')
+        plt.plot(
+            self.tatime,
+            matrix[wavelength_index, :],
+            label="{:.2f}".format(self.tawavelength[wavelength_index]) + " nm",
+        )
+        np.savetxt(
+            "k_"
+            + name
+            + "_"
+            + "{:.2f}".format(self.tawavelength[wavelength_index])
+            + "nm",
+            matrix[wavelength_index, :].T,
+            fmt="%1.5f",
+            delimiter="\t",
+        )
         plt.xlabel("Time (ps)")
         plt.ylabel("ΔOD")
         plt.legend()
@@ -1091,127 +1304,175 @@ class tamatrix_importer:
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength_pt)
         wavelength_index = np.argmin(np.abs(diff))
-        plt.plot(self.tatime, tamatrix[wavelength_index, :], label='{:.2f}'.format(
-            self.tawavelength[wavelength_index])+" nm")
+        plt.plot(
+            self.tatime,
+            tamatrix[wavelength_index, :],
+            label="{:.2f}".format(self.tawavelength[wavelength_index]) + " nm",
+        )
         plt.xlabel("Time (ps)")
         plt.ylabel("ΔOD")
         plt.legend()
         plt.show()
         return tamatrix[wavelength_index, :]
 
-    def fit_kinetic(self, wavelength, num_of_exp=None, mat=None, params=None, time_split=None):
+    def fit_kinetic(
+        self, wavelength, num_of_exp=None, mat=None, params=None, time_split=None, fitstart=None, ignore=None, avg_pts=1
+    ):
         if params is None:
             params = params_init(num_of_exp)
+        
         matrix = self.mat_selector(mat)
+        
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength)
         wavelength_index = np.argmin(np.abs(diff))
-        y = matrix[wavelength_index, :]
+        if avg_pts == 1:
+            y = matrix[wavelength_index, :]
+        else:
+            y = np.mean(matrix[wavelength_index-int(avg_pts/2):wavelength_index+int(avg_pts/2), :], axis = 0)
         t = self.tatime
+        # Determine the start index for fitting
+        
+        if fitstart is None:
+            weights = np.ones_like(t)
+        else:
+            weights = np.ones_like(t)
+            fitstart_idx = np.searchsorted(t, fitstart)
+            weights[:fitstart_idx] = 0.001
+            
+        if ignore is not None:
+            for region in ignore:
+                weights[np.searchsorted(t,region[0]):np.searchsorted(t,region[1])] = 0.001
+                        
+        
         lmodel = lmfit.Model(multiexp_func)
-        result = lmodel.fit(y, params=params, t=t, max_nfev=100000,
-                            ftol=1e-9, xtol=1e-9, nan_policy='omit')
-        # print(result.fit_report())
-        print('-------------------------------')
+        result = lmodel.fit(
+            y,
+            params=params,
+            t=t,
+            max_nfev=100000,
+            ftol=1e-9,
+            xtol=1e-9,
+            nan_policy="omit",
+            weights=weights
+        )
+        
+        print("-------------------------------")
         print(
-            f'{self.filename} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm')
-        print('-------------------------------')
-        print(f'chi-square: {result.chisqr:11.6f}')
+            f"{self.filename} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm"
+        )
+        print("-------------------------------")
+        print(f"chi-square: {result.chisqr:11.6f}")
+        
         pearsonr = np.corrcoef(result.best_fit, y)[0, 1]
-        print(f'Pearson\'s R: {pearsonr:11.6f}')
-        print('-------------------------------')
-        print('Parameter    Value       Stderr')
+        print(f"Pearson's R: {pearsonr:11.6f}")
+        print("-------------------------------")
+        print("Parameter    Value       Stderr")
+        
         for name, param in result.params.items():
-            print(f'{name:7s} {param.value:11.6f} {param.stderr:11.6f}')
-        print('-------------------------------')
-        # result.plot_fit()
+            stderr_value = param.stderr if param.stderr is not None else float('nan')
+            print(f"{name:7s} {param.value:11.6f} {stderr_value:11.6f}")
+        print("-------------------------------")
+        
         if time_split is None:
             pt_split = find_closest_value([5], self.tatime)[0]
         else:
             pt_split = find_closest_value([time_split], self.tatime)[0]
-        fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True,
-                                       gridspec_kw={'width_ratios': [2, 3]})
+        
+        fig, (ax1, ax2) = plt.subplots(
+            1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
+        )
         fig.subplots_adjust(wspace=0.05)
-
-        ax1.scatter(t[:pt_split], y[:pt_split], marker='o', color='black')
-        ax1.plot(t[:pt_split], result.best_fit[:pt_split], color='red')
-        ax1.set_xlim(t[0], t[pt_split-1])
-        # ax1.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-        ax1.spines['right'].set_visible(False)
+        
+        ax1.scatter(t[:pt_split], y[:pt_split], marker="o", color="black")
+        ax1.plot(t[:pt_split], result.best_fit[:pt_split], color="red")
+        ax1.set_xlim(t[0], t[pt_split - 1])
+        ax1.spines["right"].set_visible(False)
         ax1.tick_params(right=False)
-
-        ax2.scatter(t[pt_split:], y[pt_split:], marker='o', color='black',
-                    label=f"{self.tawavelength[wavelength_index]:.2f} nm")
-        ax2.plot(t[pt_split:], result.best_fit[pt_split:], color='red',
-                 label=f"{self.tawavelength[wavelength_index]:.2f} nm fit")
-        ax2.set_xscale('log')
-        ax2.set_xlim(t[pt_split-1], t[-1])
-        # ax2.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-        ax2.spines['left'].set_visible(False)
+        
+        ax2.scatter(
+            t[pt_split:],
+            y[pt_split:],
+            marker="o",
+            color="black",
+            label=f"{self.tawavelength[wavelength_index]:.2f} nm",
+        )
+        ax2.plot(
+            t[pt_split:],
+            result.best_fit[pt_split:],
+            color="red",
+            label=f"{self.tawavelength[wavelength_index]:.2f} nm fit",
+        )
+        ax2.set_xscale("log")
+        ax2.set_xlim(t[pt_split - 1], t[-1])
+        ax2.spines["left"].set_visible(False)
         ax2.tick_params(left=False)
-
+        
         # Creating a gap between the subplots to indicate the broken axis
         gap = 0.1
-        ax1.spines['right'].set_position(('outward', gap))
-        ax2.spines['left'].set_position(('outward', gap))
-        ax1.axhline(0, color='black', linestyle='-', linewidth=0.5)
-        ax2.axhline(0, color='black', linestyle='-', linewidth=0.5)
+        ax1.spines["right"].set_position(("outward", gap))
+        ax2.spines["left"].set_position(("outward", gap))
+        ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        
         # Centered title above subplots
-        fig.suptitle(self.filename, fontsize=10, ha='center')
-        plt.legend(loc='best')
-        fig.text(0.5, 0.04, 'Time (ps)', ha='center', fontsize=8)
+        fig.suptitle(self.filename, fontsize=10, ha="center")
+        plt.legend(loc="best")
+        fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
         plt.show()
+        
         self.fit_results[str(wavelength)] = [y, result.best_fit, result]
         return result
 
+
     def plot_fit(self, time_split=None):
-        colors = plt.cm.rainbow(np.linspace(1, 0, len(self.fit_results)))
-        cmap = ListedColormap(colors)
-        fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True,
-                                       gridspec_kw={'width_ratios': [2, 3]})
-        fig.subplots_adjust(wspace=0.05)
-        if time_split is None:
-            pt_split = find_closest_value([5], self.tatime)[0]
-        else:
-            pt_split = find_closest_value([time_split], self.tatime)[0]
-        for i, (key, value) in enumerate(self.fit_results.items()):
-            # ax1.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
-            # ax1.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
-            ax1.scatter(self.tatime[:pt_split], value[0][:pt_split],
-                        facecolor='none', marker='o', s=50, edgecolor=cmap(i))
-            ax1.plot(self.tatime[:pt_split], value[1]
-                     [:pt_split], color=cmap(i))
+            colors = plt.cm.rainbow(np.linspace(1, 0, len(self.fit_results)))
+            cmap = ListedColormap(colors)
+            fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True,
+                                        gridspec_kw={'width_ratios': [2, 3]})
+            fig.subplots_adjust(wspace=0.05)
+            if time_split is None:
+                pt_split = find_closest_value([5], self.tatime)[0]
+            else:
+                pt_split = find_closest_value([time_split], self.tatime)[0]
+            for i, (key, value) in enumerate(self.fit_results.items()):
+                # ax1.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
+                # ax1.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
+                ax1.scatter(self.tatime[:pt_split], value[0][:pt_split],
+                            facecolor='none', marker='o', s=50, edgecolor=cmap(i))
+                ax1.plot(self.tatime[:pt_split], value[1]
+                        [:pt_split], color=cmap(i))
 
-            # ax2.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
-            # ax2.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
-            ax2.scatter(self.tatime[pt_split:], value[0][pt_split:],
-                        facecolor='none', marker='o', s=50, edgecolor=cmap(i))
-            ax2.plot(self.tatime[pt_split:], value[1]
-                     [pt_split:], color=cmap(i), label=f"{key} nm")
-            ax2.set_xscale('log')
+                # ax2.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
+                # ax2.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
+                ax2.scatter(self.tatime[pt_split:], value[0][pt_split:],
+                            facecolor='none', marker='o', s=50, edgecolor=cmap(i))
+                ax2.plot(self.tatime[pt_split:], value[1]
+                        [pt_split:], color=cmap(i), label=f"{key} nm")
+                ax2.set_xscale('log')
 
-        ax2.set_xlim(self.tatime[pt_split-1], self.tatime[-1])
-        # ax2.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-        ax2.spines['left'].set_visible(False)
-        ax2.tick_params(left=False)
+            ax2.set_xlim(self.tatime[pt_split-1], self.tatime[-1])
+            # ax2.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
+            ax2.spines['left'].set_visible(False)
+            ax2.tick_params(left=False)
 
-        ax1.set_xlim(self.tatime[0], self.tatime[pt_split-1])
-        # ax1.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-        ax1.spines['right'].set_visible(False)
-        ax1.tick_params(right=False)
-        # Creating a gap between the subplots to indicate the broken axis
-        gap = 0.1
-        ax1.spines['right'].set_position(('outward', gap))
-        ax2.spines['left'].set_position(('outward', gap))
-        ax1.axhline(0, color='black', linestyle='-', linewidth=0.5)
-        ax2.axhline(0, color='black', linestyle='-', linewidth=0.5)
-        # Centered title above subplots
-        fig.suptitle(self.filename, fontsize=10, ha='center')
-        plt.legend(loc='best')
-        fig.text(0.5, 0.04, 'Time (ps)', ha='center', fontsize=8)
-        ax1.set_ylabel("ΔOD")
-        plt.show()
+            ax1.set_xlim(self.tatime[0], self.tatime[pt_split-1])
+            # ax1.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
+            ax1.spines['right'].set_visible(False)
+            ax1.tick_params(right=False)
+            # Creating a gap between the subplots to indicate the broken axis
+            gap = 0.1
+            ax1.spines['right'].set_position(('outward', gap))
+            ax2.spines['left'].set_position(('outward', gap))
+            ax1.axhline(0, color='black', linestyle='-', linewidth=0.5)
+            ax2.axhline(0, color='black', linestyle='-', linewidth=0.5)
+            # Centered title above subplots
+            fig.suptitle(self.filename, fontsize=10, ha='center')
+            plt.legend(loc='best')
+            fig.text(0.5, 0.04, 'Time (ps)', ha='center', fontsize=8)
+            ax1.set_ylabel("ΔOD")
+            plt.show()
 
     def fit_correlation(self, num_of_exp):
         self.t0_list = np.empty((3, 0))
@@ -1222,18 +1483,34 @@ class tamatrix_importer:
         tamax = np.max(np.abs(self.bgcorr[:, t1]))
         wlmax = np.argmax(np.abs(self.bgcorr[:, t1]))
         y = self.bgcorr[wlmax, :]
-        result = lmodel.fit(y, params=params, t=t, method='powell',
-                            max_nfev=1000000, nan_policy='omit')
+        result = lmodel.fit(
+            y, params=params, t=t, method="powell", max_nfev=1000000, nan_policy="omit"
+        )
         params.update(result.params)
-        for i in tqdm(range(self.bgcorr.shape[0]), desc='Fitting'):
-            if np.abs(self.bgcorr[i, t1]) > 0.1*tamax and i % 20 == 0:
+        for i in tqdm(range(self.bgcorr.shape[0]), desc="Fitting"):
+            if np.abs(self.bgcorr[i, t1]) > 0.1 * tamax and i % 20 == 0:
                 y = self.bgcorr[i, :]
                 result = lmodel.fit(
-                    y, params=params, t=t, method='powell', max_nfev=1000000, nan_policy='omit')
+                    y,
+                    params=params,
+                    t=t,
+                    method="powell",
+                    max_nfev=1000000,
+                    nan_policy="omit",
+                )
                 rms = result.chisqr
                 if result.success and rms < 0.15:  # Check if the fit was successful
-                    self.t0_list = np.append(self.t0_list, np.array(
-                        [[self.tawavelength[i]], [result.params['w10'].value], [rms]]), axis=1)
+                    self.t0_list = np.append(
+                        self.t0_list,
+                        np.array(
+                            [
+                                [self.tawavelength[i]],
+                                [result.params["w10"].value],
+                                [rms],
+                            ]
+                        ),
+                        axis=1,
+                    )
                     params.update(result.params)
         fit = polyfit(self.t0_list[1], self.t0_list[0], self.t0_list[2])
         self.t0_list[2] = fit
@@ -1267,7 +1544,8 @@ def plot_contour_file(tatime_file, tawavelength_file, tamatrix_file, max_point):
     # Create contour plot
     Y, X = np.meshgrid(tatime, tawavelength)
     plt.contourf(
-        X, Y, tamatrix, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01], cmap='rainbow')
+        X, Y, tamatrix, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01], cmap="rainbow"
+    )
     plt.colorbar()
     plt.ylim(-1, max_point)
     plt.show()
@@ -1278,18 +1556,19 @@ def plot_contour(tatime, tawavelength, tamatrix, max_point):
     # Create contour plot
     Y, X = np.meshgrid(tatime, tawavelength)
     plt.contourf(
-        X, Y, tamatrix, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01], cmap='rainbow')
+        X, Y, tamatrix, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01], cmap="rainbow"
+    )
     plt.colorbar()
     plt.ylim(-1, max_point)
     plt.show()
 
 
 def save_txt(array, file):
-    np.savetxt(array, file, fmt='%1.5f')
+    np.savetxt(array, file, fmt="%1.5f")
 
 
 def polynomial_func(x, a, b, c):
-    return a/(1e-9+(x)**2) + c
+    return a / (1e-9 + (x) ** 2) + c
 
 
 def polyfit(y, x, weights):
@@ -1298,12 +1577,12 @@ def polyfit(y, x, weights):
 
     # Creating Parameters and adding them to the model
     params = lmfit.Parameters()
-    params.add('a', value=1.0)
-    params.add('b', value=1.0)
-    params.add('c', value=1.0)
+    params.add("a", value=1.0)
+    params.add("b", value=1.0)
+    params.add("c", value=1.0)
 
     # Fitting the model to the data
-    result = poly_model.fit(y, params, method='powell', x=x, weights=1/weights)
+    result = poly_model.fit(y, params, method="powell", x=x, weights=1 / weights)
     fitted_curve = result.best_fit
     print(result.params)
     return fitted_curve
@@ -1311,35 +1590,35 @@ def polyfit(y, x, weights):
 
 def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     w = [w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12]
-    sigma = np.sqrt(w[0]**2) / (2 * np.sqrt(2 * np.log(2)))
+    sigma = np.sqrt(w[0] ** 2) / (2 * np.sqrt(2 * np.log(2)))
     result = np.zeros_like(t)  # initialize result
 
     if w[3] == 0:
         exp1 = np.zeros_like(t)
     else:
-        k0 = 1/w[3]
-        exp1 = w[2]*np.exp(-(t-w[10])*(k0))*norm.cdf(t-w[10], scale=sigma)
+        k0 = 1 / w[3]
+        exp1 = w[2] * np.exp(-(t - w[10]) * (k0)) * norm.cdf(t - w[10], scale=sigma)
 
     if w[5] == 0:
         exp2 = np.zeros_like(t)
     else:
-        k1 = 1/w[5]
-        exp2 = w[4]*np.exp(-(t-w[10])*(k1))*norm.cdf(t-w[10], scale=sigma)
+        k1 = 1 / w[5]
+        exp2 = w[4] * np.exp(-(t - w[10]) * (k1)) * norm.cdf(t - w[10], scale=sigma)
 
     if w[7] == 0:
         exp3 = np.zeros_like(t)
     else:
-        k2 = 1/w[7]
-        exp3 = w[6]*np.exp(-(t-w[10])*(k2))*norm.cdf(t-w[10], scale=sigma)
+        k2 = 1 / w[7]
+        exp3 = w[6] * np.exp(-(t - w[10]) * (k2)) * norm.cdf(t - w[10], scale=sigma)
 
     if w[9] == 0:
         exp4 = np.zeros_like(t)
     else:
-        k3 = 1/w[9]
-        exp4 = w[8]*np.exp(-(t-w[10])*(k3))*norm.cdf(t-w[10], scale=sigma)
+        k3 = 1 / w[9]
+        exp4 = w[8] * np.exp(-(t - w[10]) * (k3)) * norm.cdf(t - w[10], scale=sigma)
 
-    result += exp1+exp2+exp3+exp4
-    result += w[11]+w[12]*norm.cdf(t-w[10], scale=sigma)
+    result += exp1 + exp2 + exp3 + exp4
+    result += w[11] + w[12] * norm.cdf(t - w[10], scale=sigma)
     result *= 1
     # b=4*np.log1p(2)/(w[0]**2)
     return result
@@ -1433,46 +1712,122 @@ def params_init(num_of_exp,
 
 
     params = lmfit.Parameters()
-    params.add('w0', value=0.1, min=0.05, max=0.2, vary = w1_vary)
-    params.add('w1', value=1.0, vary=False)
-    params.add('w2', value=0, min=-0.2, max=0.2)
-    params.add('w3', value=1, min=0.01, max=5000)
+    params.add("w0", value=w0_value, min=w0_min, max=w0_max, vary=w0_vary)
+    params.add("w1", value=w1_value, vary=w1_vary)
+    params.add("w2", value=c1_value, min=c1_min, max=c1_max, vary=c1_vary)
+    params.add("w3", value=t1_value, min=t1_min, max=t1_max, vary=t1_vary)
+
     if num_of_exp == 1:
-        params.add('w4', value=0, min=-0.2, max=0.2, vary=False)
-        params.add('w5', value=10, min=0.01, max=5000, vary=False)
-        params.add('w6', value=0, min=-0.2, max=0.2, vary=False)
-        params.add('w7', value=50, min=0.01, max=5000, vary=False)
-        params.add('w8', value=0, min=-0.2, max=0.2, vary=False)
-        params.add('w9', value=500, min=0.01, max=5000, vary=False)
+        if c2_vary is None:
+            c2_vary = True
+        if t2_vary is None:
+            t2_vary = True
+        params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=False)
+        params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=False)
+        params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=False)
+        params.add("w7", value=t3_value, min=t3_min, max=t3_max, vary=False)
+        params.add("w8", value=c4_value, min=c4_min, max=c4_max, vary=False)
+        params.add("w9", value=t4_value, min=t4_min, max=t4_max, vary=False)
 
     if num_of_exp == 2:
-        params.add('w4', value=0, min=-0.2, max=0.2, vary=True)
-        params.add('w5', value=10, min=0.01, max=5000, vary=True)
-        params.add('w6', value=0, min=-0.2, max=0.2, vary=False)
-        params.add('w7', value=50, min=0.01, max=5000, vary=False)
-        params.add('w8', value=0, min=-0.2, max=0.2, vary=False)
-        params.add('w9', value=500, min=0.01, max=5000, vary=False)
+        if c2_vary is None:
+            c2_vary = True
+        if t2_vary is None:
+            t2_vary = True
+        params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=c2_vary)
+        params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=t2_vary)
+        params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=False)
+        params.add("w7", value=t3_value, min=t3_min, max=t3_max, vary=False)
+        params.add("w8", value=c4_value, min=c4_min, max=c4_max, vary=False)
+        params.add("w9", value=t4_value, min=t4_min, max=t4_max, vary=False)
 
     if num_of_exp == 3:
-        params.add('w4', value=0, min=-1.0, max=1.0, vary=True)
-        params.add('w5', value=10, min=0.01, max=5000, vary=True)
-        params.add('w6', value=0, min=-1.0, max=1.0, vary=True)
-        params.add('w7', value=50, min=0.01, max=5000, vary=True)
-        params.add('w8', value=0, min=-1.0, max=1.0, vary=False)
-        params.add('w9', value=500, min=0.01, max=5000, vary=False)
+        if c2_vary is None:
+            c2_vary = True
+        if t2_vary is None:
+            t2_vary = True
+        if c3_vary is None:
+            c3_vary = True
+        if t3_vary is None:
+            t3_vary = True
+        params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=c2_vary)
+        params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=t2_vary)
+        params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=c3_vary)
+        params.add("w7", value=t3_value, min=t3_min, max=t3_max, vary=c3_vary)
+        params.add("w8", value=c4_value, min=c4_min, max=c4_max, vary=False)
+        params.add("w9", value=t4_value, min=t4_min, max=t4_max, vary=False)
 
     if num_of_exp == 4:
-        params.add('w4', value=0, min=-1.0, max=1.0, vary=True)
-        params.add('w5', value=10, min=0.01, max=5000, vary=True)
-        params.add('w6', value=0, min=-1.0, max=1.0, vary=True)
-        params.add('w7', value=50, min=0.01, max=5000, vary=True)
-        params.add('w8', value=0, min=-1.0, max=1.0, vary=True)
-        params.add('w9', value=500, min=0.01, max=5000, vary=True)
+        if c2_vary is None:
+            c2_vary = True
+        if t2_vary is None:
+            t2_vary = True
+        if c3_vary is None:
+            c3_vary = True
+        if t3_vary is None:
+            t3_vary = True
+        if c4_vary is None:
+            c4_vary = True
+        if t4_vary is None:
+            t4_vary = True
+        params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=c2_vary)
+        params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=t2_vary)
+        params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=c3_vary)
+        params.add("w7", value=t3_value, min=t3_min, max=t3_max, vary=t3_vary)
+        params.add("w8", value=c4_value, min=c4_min, max=c4_max, vary=c4_vary)
+        params.add("w9", value=t4_value, min=t4_min, max=t4_max, vary=t4_vary)
 
-    params.add('w10', value=0.0, min=-0.5, max=0.5)
-    params.add('w11', value=0.0, min=-0.1, max=0.1)
-    params.add('w12', value=0.0, min=-0.5, max=0.5, vary=w12_vary)
+    params.add("w10", value=w10_value, min=w10_min, max=w10_max, vary=w10_vary)
+    params.add("w11", value=w11_value, min=w11_min, max=w11_max, vary=w11_vary)
+    params.add("w12", value=w12_value, min=w12_min, max=w12_max, vary=w12_vary)
     return params
+
+# def params_init(num_of_exp, w1_vary=None, w12_vary=None):
+#     if w12_vary is None:
+#         w12_vary = False
+#     if w1_vary is None:
+#         w1_vary = True
+#     params = lmfit.Parameters()
+#     params.add("w0", value=0.1, min=0.05, max=0.2, vary=w1_vary)
+#     params.add("w1", value=1.0, vary=False)
+#     params.add("w2", value=0, min=-0.2, max=0.2)
+#     params.add("w3", value=1, min=0.01, max=5000)
+#     if num_of_exp == 1:
+#         params.add("w4", value=0, min=-0.2, max=0.2, vary=False)
+#         params.add("w5", value=10, min=0.01, max=5000, vary=False)
+#         params.add("w6", value=0, min=-0.2, max=0.2, vary=False)
+#         params.add("w7", value=50, min=0.01, max=5000, vary=False)
+#         params.add("w8", value=0, min=-0.2, max=0.2, vary=False)
+#         params.add("w9", value=500, min=0.01, max=5000, vary=False)
+
+#     if num_of_exp == 2:
+#         params.add("w4", value=0, min=-0.2, max=0.2, vary=True)
+#         params.add("w5", value=10, min=0.01, max=5000, vary=True)
+#         params.add("w6", value=0, min=-0.2, max=0.2, vary=False)
+#         params.add("w7", value=50, min=0.01, max=5000, vary=False)
+#         params.add("w8", value=0, min=-0.2, max=0.2, vary=False)
+#         params.add("w9", value=500, min=0.01, max=5000, vary=False)
+
+#     if num_of_exp == 3:
+#         params.add("w4", value=0, min=-1.0, max=1.0, vary=True)
+#         params.add("w5", value=10, min=0.01, max=5000, vary=True)
+#         params.add("w6", value=0, min=-1.0, max=1.0, vary=True)
+#         params.add("w7", value=50, min=0.01, max=5000, vary=True)
+#         params.add("w8", value=0, min=-1.0, max=1.0, vary=False)
+#         params.add("w9", value=500, min=0.01, max=5000, vary=False)
+
+#     if num_of_exp == 4:
+#         params.add("w4", value=0, min=-1.0, max=1.0, vary=True)
+#         params.add("w5", value=10, min=0.01, max=5000, vary=True)
+#         params.add("w6", value=0, min=-1.0, max=1.0, vary=True)
+#         params.add("w7", value=50, min=0.01, max=5000, vary=True)
+#         params.add("w8", value=0, min=-1.0, max=1.0, vary=True)
+#         params.add("w9", value=500, min=0.01, max=5000, vary=True)
+
+#     params.add("w10", value=0.0, min=-0.5, max=0.5)
+#     params.add("w11", value=0.0, min=-0.1, max=0.1)
+#     params.add("w12", value=0.0, min=-0.5, max=0.5, vary=w12_vary)
+#     return params
 
 
 def colorwaves(ax):
@@ -1485,8 +1840,18 @@ def colorwaves(ax):
     """
     # Ensure the number of colors matches the number of lines
     lines = ax.get_lines()
-    colors = ['#4C72B0', '#DD8452', '#55A868', '#C44E52', '#8172B3',
-              '#937860', '#DA8BC3', '#8C8C8C', '#CCB974', '#64B5CD']
+    colors = [
+        "#4C72B0",
+        "#DD8452",
+        "#55A868",
+        "#C44E52",
+        "#8172B3",
+        "#937860",
+        "#DA8BC3",
+        "#8C8C8C",
+        "#CCB974",
+        "#64B5CD",
+    ]
 
     # Set the color for each line
     for i, line in enumerate(lines):
