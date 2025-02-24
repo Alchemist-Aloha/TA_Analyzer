@@ -1600,16 +1600,32 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     return result
 
 
-def params_init(num_of_exp, w1_vary = None, w12_vary = None):
+def params_init(num_of_exp,
+                w0_value=0.1, w0_min=0.05, w0_max=0.2, w0_vary=None,
+                w1_value=1.0, w1_vary=False,
+                c1_value=0, c1_min=-0.5, c1_max=0.5, c1_vary=True,
+                t1_value=1, t1_min=0.01, t1_max=5000, t1_vary=True,
+                c2_value=0, c2_min=-0.5, c2_max=0.5, c2_vary=None,
+                t2_value=10, t2_min=0.01, t2_max=5000, t2_vary=None,
+                c3_value=0, c3_min=-0.5, c3_max=0.5, c3_vary=None,
+                t3_value=50, t3_min=0.01, t3_max=5000, t3_vary=None,
+                c4_value=0, c4_min=-0.5, c4_max=0.5, c4_vary=None,
+                t4_value=500, t4_min=0.01, t4_max=5000, t4_vary=None,
+                w10_value=0.0, w10_min=-0.5, w10_max=0.5, w10_vary=True,
+                w11_value=0.0, w11_min=-0.1, w11_max=0.1, w11_vary=True,
+                w12_value=0.0, w12_min=-0.5, w12_max=0.5, w12_vary=None):
+    
+    if w0_vary is None:
+        w0_vary = True
+
     if w12_vary is None:
         w12_vary = False
-    if w1_vary is None:
-        w1_vary = True
+
     params = lmfit.Parameters()
-    params.add('w0', value=0.1, min=0.05, max=0.2, vary = w1_vary)
-    params.add('w1', value=1.0, vary=False)
-    params.add('w2', value=0, min=-0.2, max=0.2)
-    params.add('w3', value=1, min=0.01, max=5000)
+    params.add("w0", value=w0_value, min=w0_min, max=w0_max, vary=w0_vary)
+    params.add("w1", value=w1_value, vary=w1_vary)
+    params.add("w2", value=c1_value, min=c1_min, max=c1_max, vary=c1_vary)
+    params.add("w3", value=t1_value, min=t1_min, max=t1_max, vary=t1_vary)
     if num_of_exp == 1:
         if c2_vary is None:
             c2_vary = True
