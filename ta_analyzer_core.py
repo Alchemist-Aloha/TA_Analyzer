@@ -215,15 +215,22 @@ class load_spectra:
         self.ax_k.set_title(self.file_inp)
 
         return self.trace_avg
-    
-    def fit_kinetic(self, wavelength, num_of_exp=None, params=None, time_split=None, w1_vary=None, w12_vary=None):
+
+    def fit_kinetic(
+        self,
+        wavelength,
+        num_of_exp=None,
+        params=None,
+        time_split=None,
+        w1_vary=None,
+        w12_vary=None,
+    ):
         if w1_vary is None:
             w1_vary = True
         if w12_vary is None:
             w12_vary = True
         if params is None:
-            params = params_init(
-                num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
+            params = params_init(num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength)
         wavelength_index = np.argmin(np.abs(diff))
@@ -444,7 +451,6 @@ class glotaran:
         )
 
 
-
 class merge_glotaran:
     def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
         self.glotaran_vis = glotaran_vis
@@ -455,11 +461,23 @@ class merge_glotaran:
             print("Time axis mismatch")
         self.vis_max_pt = np.argmin(np.abs(self.glotaran_vis.tawavelength - vis_max))
         self.ir_min_pt = np.argmin(np.abs(self.glotaran_ir.tawavelength - ir_min))
-        self.output_matrix = np.vstack((self.glotaran_vis.output_matrix[0:self.vis_max_pt+1, :], self.glotaran_ir.output_matrix[self.ir_min_pt:, :]))
+        self.output_matrix = np.vstack(
+            (
+                self.glotaran_vis.output_matrix[0 : self.vis_max_pt + 1, :],
+                self.glotaran_ir.output_matrix[self.ir_min_pt :, :],
+            )
+        )
         self.header = self.glotaran_vis.header
-        np.savetxt(self.glotaran_vis.filename.split(".")[0]+"_ir_merged.ascii", self.output_matrix,
-                   header=self.header, fmt='%s', comments='', delimiter='\t')
-        
+        np.savetxt(
+            self.glotaran_vis.filename.split(".")[0] + "_ir_merged.ascii",
+            self.output_matrix,
+            header=self.header,
+            fmt="%s",
+            comments="",
+            delimiter="\t",
+        )
+
+
 class load_glotaran:
     """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis"""
 
@@ -511,7 +529,7 @@ class plot_glotaran:
         self.das = np.loadtxt(dir + "_DAS.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=(6, 3))
         self.fig_das.subplots_adjust(left=0.2)
-        if self.das.shape[1] != 2*self.rate_array.shape[0]:
+        if self.das.shape[1] != 2 * self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
             self.ax_das.plot(
@@ -561,9 +579,16 @@ class plot_glotaran:
                 self.ax_traces.tick_params(labelright=False)
                 self.ax_traces_2.tick_params(axis="y", labelleft=False)
                 self.ax_traces_2.yaxis.tick_right()
-                d = .5  # proportion of vertical to horizontal extent of the slanted line
-                kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
-                            linestyle="none", color='k', mec='k', mew=1, clip_on=False)
+                d = 0.5  # proportion of vertical to horizontal extent of the slanted line
+                kwargs = dict(
+                    marker=[(-1, -d), (1, d)],
+                    markersize=12,
+                    linestyle="none",
+                    color="k",
+                    mec="k",
+                    mew=1,
+                    clip_on=False,
+                )
                 self.ax_traces.plot(
                     [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs
                 )
@@ -580,7 +605,6 @@ class plot_glotaran:
                 self.ax_traces.set_ylabel("Amplitude")
         except:
             print("No trace data found or error in loading trace data")
-
 
 
 class tamatrix_importer:
@@ -1170,7 +1194,7 @@ class tamatrix_importer:
         plt.show()
         return tamatrix[:, index]
 
-    def auto_takinetics(self, wavelength_pts, mat=None, tmax = 1000):
+    def auto_takinetics(self, wavelength_pts, mat=None, tmax=1000):
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
         wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
@@ -1289,37 +1313,53 @@ class tamatrix_importer:
         return tamatrix[wavelength_index, :]
 
     def fit_kinetic(
-        self, wavelength, num_of_exp=None, mat=None, params=None, time_split=None, fitstart=None, ignore=None, avg_pts=1
+        self,
+        wavelength,
+        num_of_exp=None,
+        mat=None,
+        params=None,
+        time_split=None,
+        fitstart=None,
+        ignore=None,
+        avg_pts=1,
     ):
         if params is None:
             params = params_init(num_of_exp)
-        
+
         matrix = self.mat_selector(mat)
-        
+
         # plot spectra together
         # diff = np.abs(self.tawavelength - wavelength)
         # wavelength_index = np.argmin(np.abs(diff))
         wavelength_index = np.searchsorted(self.tawavelength, wavelength)
-        
+
         if avg_pts == 1:
             y = matrix[wavelength_index, :]
         else:
-            y = np.mean(matrix[wavelength_index-int(avg_pts/2):wavelength_index+int(avg_pts/2), :], axis = 0)
+            y = np.mean(
+                matrix[
+                    wavelength_index - int(avg_pts / 2) : wavelength_index
+                    + int(avg_pts / 2),
+                    :,
+                ],
+                axis=0,
+            )
         t = self.tatime
         # Determine the start index for fitting
-        
+
         if fitstart is None:
             weights = np.ones_like(t)
         else:
             weights = np.ones_like(t)
             fitstart_idx = np.searchsorted(t, fitstart)
             weights[:fitstart_idx] = 0.001
-            
+
         if ignore is not None:
             for region in ignore:
-                weights[np.searchsorted(t,region[0]):np.searchsorted(t,region[1])] = 0.001
-                        
-        
+                weights[
+                    np.searchsorted(t, region[0]) : np.searchsorted(t, region[1])
+                ] = 0.001
+
         lmodel = lmfit.Model(multiexp_func)
         result = lmodel.fit(
             y,
@@ -1329,42 +1369,42 @@ class tamatrix_importer:
             ftol=1e-9,
             xtol=1e-9,
             nan_policy="omit",
-            weights=weights
+            weights=weights,
         )
-        
+
         print("-------------------------------")
         print(
             f"{self.filename} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm"
         )
         print("-------------------------------")
         print(f"chi-square: {result.chisqr:11.6f}")
-        
+
         pearsonr = np.corrcoef(result.best_fit, y)[0, 1]
         print(f"Pearson's R: {pearsonr:11.6f}")
         print("-------------------------------")
         print("Parameter    Value       Stderr")
-        
+
         for name, param in result.params.items():
-            stderr_value = param.stderr if param.stderr is not None else float('nan')
+            stderr_value = param.stderr if param.stderr is not None else float("nan")
             print(f"{name:7s} {param.value:11.6f} {stderr_value:11.6f}")
         print("-------------------------------")
-        
+
         if time_split is None:
             pt_split = find_closest_value([5], self.tatime)[0]
         else:
             pt_split = find_closest_value([time_split], self.tatime)[0]
-        
+
         fig, (ax1, ax2) = plt.subplots(
             1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
         )
         fig.subplots_adjust(wspace=0.05)
-        
+
         ax1.scatter(t[:pt_split], y[:pt_split], marker="o", color="black")
         ax1.plot(t[:pt_split], result.best_fit[:pt_split], color="red")
         ax1.set_xlim(t[0], t[pt_split - 1])
         ax1.spines["right"].set_visible(False)
         ax1.tick_params(right=False)
-        
+
         ax2.scatter(
             t[pt_split:],
             y[pt_split:],
@@ -1382,72 +1422,87 @@ class tamatrix_importer:
         ax2.set_xlim(t[pt_split - 1], t[-1])
         ax2.spines["left"].set_visible(False)
         ax2.tick_params(left=False)
-        
+
         # Creating a gap between the subplots to indicate the broken axis
         gap = 0.1
         ax1.spines["right"].set_position(("outward", gap))
         ax2.spines["left"].set_position(("outward", gap))
         ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
         ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        
+
         # Centered title above subplots
         fig.suptitle(self.filename, fontsize=10, ha="center")
         plt.legend(loc="best")
         fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
         plt.show()
-        
+
         self.fit_results[str(wavelength)] = [y, result.best_fit, result]
         return result
 
-
     def plot_fit(self, time_split=None):
-            colors = plt.cm.rainbow(np.linspace(1, 0, len(self.fit_results)))
-            cmap = ListedColormap(colors)
-            fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True,
-                                        gridspec_kw={'width_ratios': [2, 3]})
-            fig.subplots_adjust(wspace=0.05)
-            if time_split is None:
-                pt_split = find_closest_value([5], self.tatime)[0]
-            else:
-                pt_split = find_closest_value([time_split], self.tatime)[0]
-            for i, (key, value) in enumerate(self.fit_results.items()):
-                # ax1.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
-                # ax1.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
-                ax1.scatter(self.tatime[:pt_split], value[0][:pt_split],
-                            facecolor='none', marker='o', s=50, edgecolor=cmap(i))
-                ax1.plot(self.tatime[:pt_split], value[1]
-                        [:pt_split], color=cmap(i))
+        colors = plt.cm.rainbow(np.linspace(1, 0, len(self.fit_results)))
+        cmap = ListedColormap(colors)
+        fig, (ax1, ax2) = plt.subplots(
+            1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
+        )
+        fig.subplots_adjust(wspace=0.05)
+        if time_split is None:
+            pt_split = find_closest_value([5], self.tatime)[0]
+        else:
+            pt_split = find_closest_value([time_split], self.tatime)[0]
+        for i, (key, value) in enumerate(self.fit_results.items()):
+            # ax1.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
+            # ax1.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
+            ax1.scatter(
+                self.tatime[:pt_split],
+                value[0][:pt_split],
+                facecolor="none",
+                marker="o",
+                s=50,
+                edgecolor=cmap(i),
+            )
+            ax1.plot(self.tatime[:pt_split], value[1][:pt_split], color=cmap(i))
 
-                # ax2.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
-                # ax2.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
-                ax2.scatter(self.tatime[pt_split:], value[0][pt_split:],
-                            facecolor='none', marker='o', s=50, edgecolor=cmap(i))
-                ax2.plot(self.tatime[pt_split:], value[1]
-                        [pt_split:], color=cmap(i), label=f"{key} nm")
-                ax2.set_xscale('log')
+            # ax2.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
+            # ax2.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
+            ax2.scatter(
+                self.tatime[pt_split:],
+                value[0][pt_split:],
+                facecolor="none",
+                marker="o",
+                s=50,
+                edgecolor=cmap(i),
+            )
+            ax2.plot(
+                self.tatime[pt_split:],
+                value[1][pt_split:],
+                color=cmap(i),
+                label=f"{key} nm",
+            )
+            ax2.set_xscale("log")
 
-            ax2.set_xlim(self.tatime[pt_split-1], self.tatime[-1])
-            # ax2.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-            ax2.spines['left'].set_visible(False)
-            ax2.tick_params(left=False)
+        ax2.set_xlim(self.tatime[pt_split - 1], self.tatime[-1])
+        # ax2.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
+        ax2.spines["left"].set_visible(False)
+        ax2.tick_params(left=False)
 
-            ax1.set_xlim(self.tatime[0], self.tatime[pt_split-1])
-            # ax1.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
-            ax1.spines['right'].set_visible(False)
-            ax1.tick_params(right=False)
-            # Creating a gap between the subplots to indicate the broken axis
-            gap = 0.1
-            ax1.spines['right'].set_position(('outward', gap))
-            ax2.spines['left'].set_position(('outward', gap))
-            ax1.axhline(0, color='black', linestyle='-', linewidth=0.5)
-            ax2.axhline(0, color='black', linestyle='-', linewidth=0.5)
-            # Centered title above subplots
-            fig.suptitle(self.filename, fontsize=10, ha='center')
-            plt.legend(loc='best')
-            fig.text(0.5, 0.04, 'Time (ps)', ha='center', fontsize=8)
-            ax1.set_ylabel("ΔOD")
-            plt.show()
+        ax1.set_xlim(self.tatime[0], self.tatime[pt_split - 1])
+        # ax1.set_ylim(min(result.best_fit), max(result.best_fit)*1.1)
+        ax1.spines["right"].set_visible(False)
+        ax1.tick_params(right=False)
+        # Creating a gap between the subplots to indicate the broken axis
+        gap = 0.1
+        ax1.spines["right"].set_position(("outward", gap))
+        ax2.spines["left"].set_position(("outward", gap))
+        ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        # Centered title above subplots
+        fig.suptitle(self.filename, fontsize=10, ha="center")
+        plt.legend(loc="best")
+        fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
+        ax1.set_ylabel("ΔOD")
+        plt.show()
 
     def fit_correlation(self, num_of_exp):
         self.t0_list = np.empty((3, 0))
@@ -1599,21 +1654,59 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     return result
 
 
-def params_init(num_of_exp,
-                w0_value=0.1, w0_min=0.05, w0_max=0.2, w0_vary=None,
-                w1_value=1.0, w1_vary=False,
-                c1_value=0, c1_min=-0.5, c1_max=0.5, c1_vary=True,
-                t1_value=1, t1_min=0.01, t1_max=5000, t1_vary=True,
-                c2_value=0, c2_min=-0.5, c2_max=0.5, c2_vary=None,
-                t2_value=10, t2_min=0.01, t2_max=5000, t2_vary=None,
-                c3_value=0, c3_min=-0.5, c3_max=0.5, c3_vary=None,
-                t3_value=50, t3_min=0.01, t3_max=5000, t3_vary=None,
-                c4_value=0, c4_min=-0.5, c4_max=0.5, c4_vary=None,
-                t4_value=500, t4_min=0.01, t4_max=5000, t4_vary=None,
-                w10_value=0.0, w10_min=-0.5, w10_max=0.5, w10_vary=True,
-                w11_value=0.0, w11_min=-0.1, w11_max=0.1, w11_vary=True,
-                w12_value=0.0, w12_min=-0.5, w12_max=0.5, w12_vary=None):
-    
+def params_init(
+    num_of_exp,
+    w0_value=0.1,
+    w0_min=0.05,
+    w0_max=0.2,
+    w0_vary=None,
+    w1_value=1.0,
+    w1_vary=False,
+    c1_value=0,
+    c1_min=-0.5,
+    c1_max=0.5,
+    c1_vary=True,
+    t1_value=1,
+    t1_min=0.01,
+    t1_max=5000,
+    t1_vary=True,
+    c2_value=0,
+    c2_min=-0.5,
+    c2_max=0.5,
+    c2_vary=None,
+    t2_value=10,
+    t2_min=0.01,
+    t2_max=5000,
+    t2_vary=None,
+    c3_value=0,
+    c3_min=-0.5,
+    c3_max=0.5,
+    c3_vary=None,
+    t3_value=50,
+    t3_min=0.01,
+    t3_max=5000,
+    t3_vary=None,
+    c4_value=0,
+    c4_min=-0.5,
+    c4_max=0.5,
+    c4_vary=None,
+    t4_value=500,
+    t4_min=0.01,
+    t4_max=5000,
+    t4_vary=None,
+    w10_value=0.0,
+    w10_min=-0.5,
+    w10_max=0.5,
+    w10_vary=True,
+    w11_value=0.0,
+    w11_min=-0.1,
+    w11_max=0.1,
+    w11_vary=True,
+    w12_value=0.0,
+    w12_min=-0.5,
+    w12_max=0.5,
+    w12_vary=None,
+):
     if w0_vary is None:
         w0_vary = True
 
