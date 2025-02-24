@@ -1498,10 +1498,10 @@ class tamatrix_importer:
 
     def plot_fit(self, time_split=None):
         """Plot the fitted kinetics data.
-            Args:
-                time_split (float, optional): The time point at which to split the plot
-                    into linear and logarithmic scales. Defaults to None.
-                    
+        Args:
+            time_split (float, optional): The time point at which to split the plot
+                into linear and logarithmic scales. Defaults to None.
+
         """
         colors = plt.cm.rainbow(np.linspace(1, 0, len(self.fit_results)))
         cmap = ListedColormap(colors)
@@ -1568,8 +1568,8 @@ class tamatrix_importer:
 
     def fit_correlation(self, num_of_exp):
         """Fit the cross-correlation curve to determine the zero time.
-            Args:
-                num_of_exp (int): The number of exponentials to use in the fitting model.
+        Args:
+            num_of_exp (int): The number of exponentials to use in the fitting model.
         """
         self.t0_list = np.empty((3, 0))
         t = self.tatime
@@ -1617,7 +1617,7 @@ class tamatrix_importer:
 
 
 def find_closest_value(list1, list2):
-    """Find the closest value in list2 for each element in list1. 
+    """Find the closest value in list2 for each element in list1.
     Similar to np.searchsorted but doesn't require sorted array.
 
     Args:
@@ -1723,23 +1723,23 @@ def polyfit(y, x, weights):
 
 def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     """Multi-exponential function for fitting TA data.
-        Args:
-            t (array-like): Time points.
-            w0 (float): Gaussian distribution width for IRF fitting. Use gaussian integral to fit the IRF.
-            w1 (float): General amplitude of the fitting. Default to 1.
-            w2 (float): Amplitude of the first exponential.
-            w3 (float): Lifetime of the first exponential.
-            w4 (float): Amplitude of the second exponential.
-            w5 (float): Lifetime of the second exponential.
-            w6 (float): Amplitude of the third exponential.
-            w7 (float): Lifetime of the third exponential.
-            w8 (float): Amplitude of the fourth exponential.
-            w9 (float): Lifetime of the fourth exponential.
-            w10 (float): Zero time.
-            w11 (float): Pre-zero offset.
-            w12 (float): Long-terme offset.
-        Returns:
-            array-like: The fitted data.
+    Args:
+        t (array-like): Time points.
+        w0 (float): Gaussian distribution width for IRF fitting. Use gaussian integral to fit the IRF.
+        w1 (float): General amplitude of the fitting. Default to 1.
+        w2 (float): Amplitude of the first exponential.
+        w3 (float): Lifetime of the first exponential.
+        w4 (float): Amplitude of the second exponential.
+        w5 (float): Lifetime of the second exponential.
+        w6 (float): Amplitude of the third exponential.
+        w7 (float): Lifetime of the third exponential.
+        w8 (float): Amplitude of the fourth exponential.
+        w9 (float): Lifetime of the fourth exponential.
+        w10 (float): Zero time.
+        w11 (float): Pre-zero offset.
+        w12 (float): Long-terme offset.
+    Returns:
+        array-like: The fitted data.
     """
     w = [w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12]
     sigma = np.sqrt(w[0] ** 2) / (2 * np.sqrt(2 * np.log(2)))
