@@ -1300,8 +1300,10 @@ class tamatrix_importer:
         matrix = self.mat_selector(mat)
         
         # plot spectra together
-        diff = np.abs(self.tawavelength - wavelength)
-        wavelength_index = np.argmin(np.abs(diff))
+        # diff = np.abs(self.tawavelength - wavelength)
+        # wavelength_index = np.argmin(np.abs(diff))
+        wavelength_index = np.searchsorted(self.tawavelength, wavelength)
+        
         if avg_pts == 1:
             y = matrix[wavelength_index, :]
         else:
@@ -1690,53 +1692,6 @@ def params_init(num_of_exp,
     params.add("w11", value=w11_value, min=w11_min, max=w11_max, vary=w11_vary)
     params.add("w12", value=w12_value, min=w12_min, max=w12_max, vary=w12_vary)
     return params
-
-# def params_init(num_of_exp, w1_vary=None, w12_vary=None):
-#     if w12_vary is None:
-#         w12_vary = False
-#     if w1_vary is None:
-#         w1_vary = True
-#     params = lmfit.Parameters()
-#     params.add("w0", value=0.1, min=0.05, max=0.2, vary=w1_vary)
-#     params.add("w1", value=1.0, vary=False)
-#     params.add("w2", value=0, min=-0.2, max=0.2)
-#     params.add("w3", value=1, min=0.01, max=5000)
-#     if num_of_exp == 1:
-#         params.add("w4", value=0, min=-0.2, max=0.2, vary=False)
-#         params.add("w5", value=10, min=0.01, max=5000, vary=False)
-#         params.add("w6", value=0, min=-0.2, max=0.2, vary=False)
-#         params.add("w7", value=50, min=0.01, max=5000, vary=False)
-#         params.add("w8", value=0, min=-0.2, max=0.2, vary=False)
-#         params.add("w9", value=500, min=0.01, max=5000, vary=False)
-
-#     if num_of_exp == 2:
-#         params.add("w4", value=0, min=-0.2, max=0.2, vary=True)
-#         params.add("w5", value=10, min=0.01, max=5000, vary=True)
-#         params.add("w6", value=0, min=-0.2, max=0.2, vary=False)
-#         params.add("w7", value=50, min=0.01, max=5000, vary=False)
-#         params.add("w8", value=0, min=-0.2, max=0.2, vary=False)
-#         params.add("w9", value=500, min=0.01, max=5000, vary=False)
-
-#     if num_of_exp == 3:
-#         params.add("w4", value=0, min=-1.0, max=1.0, vary=True)
-#         params.add("w5", value=10, min=0.01, max=5000, vary=True)
-#         params.add("w6", value=0, min=-1.0, max=1.0, vary=True)
-#         params.add("w7", value=50, min=0.01, max=5000, vary=True)
-#         params.add("w8", value=0, min=-1.0, max=1.0, vary=False)
-#         params.add("w9", value=500, min=0.01, max=5000, vary=False)
-
-#     if num_of_exp == 4:
-#         params.add("w4", value=0, min=-1.0, max=1.0, vary=True)
-#         params.add("w5", value=10, min=0.01, max=5000, vary=True)
-#         params.add("w6", value=0, min=-1.0, max=1.0, vary=True)
-#         params.add("w7", value=50, min=0.01, max=5000, vary=True)
-#         params.add("w8", value=0, min=-1.0, max=1.0, vary=True)
-#         params.add("w9", value=500, min=0.01, max=5000, vary=True)
-
-#     params.add("w10", value=0.0, min=-0.5, max=0.5)
-#     params.add("w11", value=0.0, min=-0.1, max=0.1)
-#     params.add("w12", value=0.0, min=-0.5, max=0.5, vary=w12_vary)
-#     return params
 
 
 def colorwaves(ax):
