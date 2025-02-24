@@ -116,9 +116,10 @@ class load_spectra:
         Args:
             file_inp (str): The name of the file to be loaded. e.g. "expt_". if num_spec = 1, file_inp should use full name, e.g. "expt_3".
             num_spec (int, optional): num_spec is the number of experiments to be loaded. e.g. 5. Note this will load expt_1, expt_2, expt_3, expt_4, expt_5. Defaults to None.
-            select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5].
-            Note this will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
-            Use num_spec = 1 instead for single experiment. Defaults to None.
+            select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5]. Defaults to None.
+        Notes:
+            select will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
+            Use num_spec = 1 instead for single experiment.
         """
 
         self.file_inp = file_inp
@@ -148,7 +149,7 @@ class load_spectra:
 
         Args:
             obj_bg (load_spectra): load_spectra object of the blank background TA matrix
-            modifier (float, optional): modifier applied to the blank for subtraction. Defaults to None.
+            modifier (float, optional): modifier applied (multiplied) to the blank for subtraction. Defaults to None.
         """
         if modifier is None:
             modifier = 1
@@ -452,7 +453,16 @@ class glotaran:
 
 
 class merge_glotaran:
+    """Class to merge the Glotaran output files from visible and IR region"""
+
     def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
+        """Initialize the class with the Glotaran output files from visible and IR region. The output will be saved as filename+"_ir_merged.ascii"
+        Args:
+            glotaran_vis (load_glotaran): The load_glotaran object of the visible region
+            glotaran_ir (load_glotaran): The load_glotaran object of the IR region
+            vis_max (num): The maximum wavelength of the visible region
+            ir_min (num): The minimum wavelength of the IR region
+        """
         self.glotaran_vis = glotaran_vis
         self.glotaran_ir = glotaran_ir
         if np.array_equal(self.glotaran_vis.tatime, self.glotaran_ir.tatime):
@@ -497,10 +507,13 @@ class load_glotaran:
 
 
 class plot_glotaran:
+    """Class to plot the Glotaran output file. plot both traces and DASs"""
+
     def __init__(self, dir):
         """Initialize the class with the Glotaran output file. plot both traces and DASs
         Files: "_traces.ascii", "_DAS.ascii", "_summary.txt"
-        dir is the directory of the file without the extension
+            Args:
+                dir (str): The directory of the file without the extension
         """
         rate_list = []
         error_list = []
@@ -1195,6 +1208,12 @@ class tamatrix_importer:
         return tamatrix[:, index]
 
     def auto_takinetics(self, wavelength_pts, mat=None, tmax=1000):
+        """Plot the TA kinetics at selected wavelengths
+        Args:
+            wavelength_pts (list): The wavelengths to be plotted.
+            mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
+            tmax (num, optional): The maximum time to be plotted. Defaults to 1000.
+        """
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
         wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
@@ -1227,6 +1246,16 @@ class tamatrix_importer:
         plt.show()
 
     def save_takinetics(self, name, wavelength_pts, mat):
+        """Plot and Save the TA kinetics at selected wavelengths. Saved file will be named as k_name
+
+        Args:
+            name (str): The name of the file.
+            wavelength_pts (list): The wavelengths to be plotted.
+            mat (str): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'.
+
+        Returns:
+            2darray: The kinetics set
+        """
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
         wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
@@ -1323,6 +1352,33 @@ class tamatrix_importer:
         ignore=None,
         avg_pts=1,
     ):
+        """
+        Fits kinetic data at a specified wavelength using a multi-exponential model.
+
+        Args:
+            wavelength (float): The wavelength at which to fit the kinetic data.
+            num_of_exp (int, optional): The number of exponentials to use in the fitting model.
+            mat (array-like, optional): The matrix containing the data to be fitted.
+                If None, the default matrix is used. Defaults to None.
+            params (lmfit.Parameters, optional): Initial parameters for the fitting model.
+                If None, default parameters are initialized. Defaults to None.
+            time_split (float, optional): The time point at which to split the plot
+                into linear and logarithmic scales. Defaults to None.
+            fitstart (float, optional): The time (ps) at which to start the fitting.
+                Data points before this time are given lower weights. Defaults to None.
+            ignore (list of tuples, optional): List of time regions (ps, ps) to ignore during fitting.
+                Each tuple contains the start and end times of the region. Defaults to None.
+            avg_pts (int, optional): The number of points to average around the specified wavelength.
+                Defaults to 1 (no averaging).
+
+        Returns:
+            lmfit.model.ModelResult: The result of the fitting process,
+                containing the best-fit parameters and statistics.
+
+        Notes:
+            - The function plots the fitted data and the original data for visual inspection.
+            - The fitting results are stored in the `fit_results` attribute of the object.
+        """
         if params is None:
             params = params_init(num_of_exp)
 
@@ -1441,6 +1497,12 @@ class tamatrix_importer:
         return result
 
     def plot_fit(self, time_split=None):
+        """Plot the fitted kinetics data.
+            Args:
+                time_split (float, optional): The time point at which to split the plot
+                    into linear and logarithmic scales. Defaults to None.
+                    
+        """
         colors = plt.cm.rainbow(np.linspace(1, 0, len(self.fit_results)))
         cmap = ListedColormap(colors)
         fig, (ax1, ax2) = plt.subplots(
@@ -1505,6 +1567,10 @@ class tamatrix_importer:
         plt.show()
 
     def fit_correlation(self, num_of_exp):
+        """Fit the cross-correlation curve to determine the zero time.
+            Args:
+                num_of_exp (int): The number of exponentials to use in the fitting model.
+        """
         self.t0_list = np.empty((3, 0))
         t = self.tatime
         lmodel = lmfit.Model(multiexp_func)
@@ -1551,6 +1617,16 @@ class tamatrix_importer:
 
 
 def find_closest_value(list1, list2):
+    """Find the closest value in list2 for each element in list1. 
+    Similar to np.searchsorted but doesn't require sorted array.
+
+    Args:
+        list1 (list): The list of values to find the closest value for.
+        list2 (list): The list of values to search for the closest value.
+
+    Returns:
+        _type_: _description_
+    """
     array1 = np.array(list1)
     array2 = np.array(list2)
     closest = [0] * len(array1)  # Initialize closest list with zeros
@@ -1594,14 +1670,41 @@ def plot_contour(tatime, tawavelength, tamatrix, max_point):
 
 
 def save_txt(array, file):
+    """Save a numpy array to a text file.
+
+    Args:
+        array (array-like): The array to be saved.
+        file (str): The name of the file to save the array to.
+    """
     np.savetxt(array, file, fmt="%1.5f")
 
 
 def polynomial_func(x, a, b, c):
+    """Polynomial function for fitting data.
+
+    Args:
+        x (array-like): The x-values of the data.
+        a (float): The coefficient of the polynomial.
+        b (float): The coefficient of the polynomial.
+        c (float): The coefficient of the polynomial.
+
+    Returns:
+        array-like: The fitted curve
+    """
     return a / (1e-9 + (x) ** 2) + c
 
 
 def polyfit(y, x, weights):
+    """Fits a polynomial function to the data.
+
+    Args:
+        y (array-like): The y-values of the data.
+        x (array-like): The x-values of the data.
+        weights (array-like): The weights of the data.
+
+    Returns:
+        array-like: The fitted curve.
+    """
     # Creating a Model object with the quadruple function
     poly_model = lmfit.Model(polynomial_func)
 
@@ -1619,6 +1722,25 @@ def polyfit(y, x, weights):
 
 
 def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
+    """Multi-exponential function for fitting TA data.
+        Args:
+            t (array-like): Time points.
+            w0 (float): Gaussian distribution width for IRF fitting. Use gaussian integral to fit the IRF.
+            w1 (float): General amplitude of the fitting. Default to 1.
+            w2 (float): Amplitude of the first exponential.
+            w3 (float): Lifetime of the first exponential.
+            w4 (float): Amplitude of the second exponential.
+            w5 (float): Lifetime of the second exponential.
+            w6 (float): Amplitude of the third exponential.
+            w7 (float): Lifetime of the third exponential.
+            w8 (float): Amplitude of the fourth exponential.
+            w9 (float): Lifetime of the fourth exponential.
+            w10 (float): Zero time.
+            w11 (float): Pre-zero offset.
+            w12 (float): Long-terme offset.
+        Returns:
+            array-like: The fitted data.
+    """
     w = [w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12]
     sigma = np.sqrt(w[0] ** 2) / (2 * np.sqrt(2 * np.log(2)))
     result = np.zeros_like(t)  # initialize result
@@ -1760,11 +1882,11 @@ def params_init(
         w12_min (float, optional): Minimum value for w12. Defaults to -0.5.
         w12_max (float, optional): Maximum value for w12. Defaults to 0.5.
         w12_vary (bool, optional): Whether w12 varies. Defaults to None.
-        
+
 
     Returns:
         lmfit.Parameters: Initialized parameters for the TA Analyzer.
-    """    
+    """
     if w0_vary is None:
         w0_vary = True
 
@@ -1846,9 +1968,9 @@ def colorwaves(ax):
     """
     Change the colors of the lines in the given Axes object.
 
-    Parameters:
-    ax (matplotlib.axes.Axes): The Axes object containing the lines.
-    colors (list of str): A list of colors to apply to the lines.
+    Args:
+        ax (matplotlib.axes.Axes): The Axes object containing the lines.
+        colors (list of str): A list of colors to apply to the lines.
     """
     # Ensure the number of colors matches the number of lines
     lines = ax.get_lines()
