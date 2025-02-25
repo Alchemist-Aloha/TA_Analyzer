@@ -418,7 +418,8 @@ class glotaran:
             tatime (str): The filename of the time axis
             tawavelength (str): The filename of the wavelength axis
         """
-        self.filename = matrix_corr
+        self.filename = Path(matrix_corr)
+        self.filestem = self.filename.stem
         self.tatime = np.loadtxt(tatime)
         self.tawavelength = np.loadtxt(tawavelength)
         # np.genfromtext will read nan as nan, avoid size mismatch with np.loadtxt
@@ -434,10 +435,10 @@ class glotaran:
             axis=1,
         )
         self.header = (
-            self.filename + "\n\nTime explicit\nintervalnr " + str(len(self.tatime))
+            self.filestem + "\n\nTime explicit\nintervalnr " + str(len(self.tatime))
         )
         np.savetxt(
-            self.filename.split(".")[0] + ".ascii",
+            self.filename.with_suffix(".ascii"),
             self.output_matrix,
             header=self.header,
             fmt="%s",
@@ -473,10 +474,9 @@ class merge_glotaran:
         )
         self.header = self.glotaran_vis.header
         try:
-            print(f"Error in merging using Pathlib: {e}")   
             # May need further work to save the file correctly 
             np.savetxt(
-                self.glotaran_vis.filename.withname(self.glotaran_vis.filestem+"_ir_merged").with_suffix(".ascii"),
+                self.glotaran_vis.filename.with_name(self.glotaran_vis.filestem+"_ir_merged").with_suffix(".ascii"),
                 self.output_matrix,
                 header=self.header,
                 fmt="%s",
