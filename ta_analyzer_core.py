@@ -7,6 +7,7 @@ import xarray as xr
 from matplotlib.colors import ListedColormap
 from scipy.stats import norm
 from tqdm import tqdm
+from pathlib import Path
 
 """
 
@@ -488,7 +489,7 @@ class load_glotaran:
         """Initialize the class with the Glotaran input file
 
         Args:
-            dir (str): The filename of the Glotaran input file
+            dir (Pathlib.Path): The filename of the Glotaran input file
         """
         self.filename = dir
         matrix = np.loadtxt(dir, skiprows=4, delimiter="\t", dtype=str)
@@ -497,6 +498,29 @@ class load_glotaran:
         self.tatime = matrix[0, 1:]
         self.tawavelength = matrix[1:, 0]
         self.tamatrix = matrix[1:, 1:]
+
+
+def batch_load_glotaran(dir="."):
+    """Batch load all the Glotaran input files in the directory"""
+    if dir.exists():
+        current_dir = Path(dir)
+    else:
+        print("Invalid directory")
+        return
+    ascii_files_list = list(current_dir.glob("*.ascii"))
+    print(ascii_files_list)
+    glotaran_instance_list = []
+    glotaran_instance_dict = {}
+    for i, ascii_file in enumerate(ascii_files_list):
+        print(i, ascii_file)
+        glotaran_instance_list.append(
+            tamatrix_importer(load_glotaran=load_glotaran(ascii_file))
+        )
+        glotaran_instance_list[i].auto_taspectra(
+            mat="tcorr", time_pts=[0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        )
+        glotaran_instance_dict[ascii_files_list[i].stem] = glotaran_instance_list[i]
+    return ascii_files_list, glotaran_instance_list, glotaran_instance_dict
 
 
 class plot_glotaran:
@@ -633,7 +657,7 @@ class tamatrix_importer:
         """Initialize the class with the filename, start and end wavelength to be loaded. If no filename is given, the object can be loaded from Load_spectra object or load_glotaran object
 
         Args:
-            filename (str, optional): The filename of the TA matrix file to be loaded.
+            filename (Pathlib.Path, optional): The filename of the TA matrix file to be loaded.
             startnm (num, optional): The start wavelength to be loaded. Defaults to 0.
             endnm (num, optional): The end wavelength to be loaded. Defaults to 1200 nm.
             load_spectra (load_spectra, optional): The load_spectra object to be loaded.
@@ -655,7 +679,9 @@ class tamatrix_importer:
         if filename is not None:
             # Load firstcol wave and find startrow and endrow
             # filename = input("Enter the filename for firstcol wave: ")
+            # filename is the full directory while filestem is the name without extension
             self.filename = filename
+            self.filestem = filename.stem
             firstcol = np.loadtxt(self.filename)[:, 1]
             if self.startnm < np.min(firstcol):
                 self.startrow = np.argmin(firstcol)
@@ -700,12 +726,14 @@ class tamatrix_importer:
             self.tatime = load_spectra.tatime
             self.tamatrix = load_spectra.tamatrix_avg[:, 2:]
             self.filename = load_spectra.file_inp
+            self.filestem = load_spectra.file_inp.stem
 
         elif load_glotaran is not None:
             self.tawavelength = load_glotaran.tawavelength
             self.tatime = load_glotaran.tatime
             self.tcorr = load_glotaran.tamatrix
             self.filename = load_glotaran.filename
+            self.filestem = load_glotaran.filename.stem
         """ else:
             self.tawavelength = np.loadtxt(tawavelength)
             self.tatime = np.loadtxt(tatime)
@@ -713,7 +741,7 @@ class tamatrix_importer:
             self.filename = tamatrix """
 
         if name is not None:
-            self.filename = name
+            self.filestem = name
 
         self.fit_results = {}
 
@@ -738,13 +766,16 @@ class tamatrix_importer:
         plt.colorbar()
         plt.show()
 
-    def save_all(self, filename, mat):
+    def save_all(self, filename=None, mat=None):
         """Save the time axis, wavelength axis and TA matrix. Saved files will be named as filename+"_tatime", filename+"_tawavelength", filename+"_tamatrix"
 
         Args:
             filename (str): directory to save the files. e.g. "C:/Users/xxx"
             mat (str): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         """
+        if mat is None:
+            matrix = self.tcorr.copy()
+            print("Background and Zero time corrected matrix is selected\n")
         if mat == "original":
             matrix = self.tamatrix.copy()
             print("Original matrix is selected\n")
@@ -754,14 +785,16 @@ class tamatrix_importer:
         else:
             matrix = self.tcorr.copy()
             print("Background and Zero time corrected matrix is selected\n")
+        if filename is None:
+            filename = self.filestem
         np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
         print(filename + "_tawavelength has been saved\n")
         np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
         print(filename + "_tatime has been saved\n")
         np.savetxt(filename + "_tamatrix", matrix, fmt="%1.5f")
-        print(filename + "_tatime has been saved\n")
+        print(filename + "_" + mat + "_tatime has been saved\n")
 
-    def save_tamatrix(self, filename, mat=None):
+    def save_tamatrix(self, filename=None, mat=None):
         """Save the TA matrix. Saved file will be named as filename+"_tamatrix"
 
         Args:
@@ -780,33 +813,39 @@ class tamatrix_importer:
         else:
             matrix = self.tcorr.copy()
             print("Background and Zero time corrected matrix is selected\n")
-        if filename == self.filename:
-            print("Cannot overwrite original matrix, choose another name\n")
+        if filename is None:
+            filename = self.filestem
         else:
-            np.savetxt(filename + "_tamatrix", matrix, fmt="%1.5f")
+            np.savetxt(filename + "_" + mat + "_tamatrix", matrix, fmt="%1.5f")
 
-    def save_tatime(self, filename):
+    def save_tatime(self, filename=None):
         """Save the time axis. Saved file will be named as filename+"_tatime"
 
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
+        if filename is None:
+            filename = self.filestem
         np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
 
-    def save_tawavelength(self, filename):
+    def save_tawavelength(self, filename=None):
         """Save the wavelength axis. Saved file will be named as filename+"_tawavelength"
 
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
+        if filename is None:
+            filename = self.filestem
         np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
 
-    def save_axes(self, filename):
+    def save_axes(self, filename=None):
         """Save the time and wavelength axes. Saved files will be named as filename+"_tatime" and filename+"_tawavelength"
 
         Args:
             filename (str): directory to save the files. e.g. "C:/Users/xxx"
         """
+        if filename is None:
+            filename = self.filestem
         np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
         np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
 
@@ -1092,12 +1131,12 @@ class tamatrix_importer:
         colors = plt.cm.rainbow(np.linspace(1, 0, len(time_index)))
         cmap = ListedColormap(colors)
         self.spectra_set = self.tawavelength.copy()
-        plt.figure(figsize=(6, 3))
+        fig, ax = plt.subplots(figsize=(6, 3))
         # plot spectra together
         for i in range(len(time_index)):
             spec = matrix[:, time_index[i]]
             self.spectra_set = np.c_[self.spectra_set, spec]
-            plt.plot(
+            ax.plot(
                 self.tawavelength,
                 spec,
                 label="{:.2f}".format(self.tatime[time_index[i]]) + " ps",
@@ -1105,7 +1144,7 @@ class tamatrix_importer:
                 linewidth=0.5,
             )
         # plt.ylim(-0.05,0.05)
-        plt.title(self.filename)
+        ax.set_title(self.filestem)
         plt.rcParams.update(
             {
                 "font.size": 8,  # Default font size
@@ -1115,11 +1154,11 @@ class tamatrix_importer:
                 "ytick.labelsize": 8,  # Tick label size for y axis
             }
         )
-        plt.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        plt.xlabel("Wavelength (nm)")
-        plt.ylabel("ΔOD")
-        plt.legend(loc="best")
-        plt.show()
+        ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax.set_xlabel("Wavelength (nm)")
+        ax.set_ylabel("ΔOD")
+        ax.legend(loc="best")
+        fig.show()
         return self.spectra_set, time_index
 
     def save_taspectra(self, name=None, time_pts=None, mat=None):
@@ -1131,7 +1170,7 @@ class tamatrix_importer:
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         """
         if name is None:
-            name = self.filename
+            name = self.filestem
         self.spectra_set, time_index = self.auto_taspectra(time_pts, mat)
         header_str = "Wavelength\t"
         for time in time_index:
@@ -1184,7 +1223,8 @@ class tamatrix_importer:
         plt.show()
         return matrix[:, index]
 
-    def return_spectrum(self, tamatrix, time_pt):
+    def return_spectrum(self, time_pt, mat=None):
+        tamatrix = self.mat_selector(mat)
         diff = self.tatime.copy() - time_pt
         index = np.argmin(np.abs(diff))
         plt.plot(
@@ -1205,21 +1245,24 @@ class tamatrix_importer:
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
             tmax (num, optional): The maximum time to be plotted. Defaults to 1000.
         """
+        self.kinetics_set = self.tatime.copy()
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
         wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
         matrix = self.mat_selector(mat)
         # plot spectra together
-        plt.figure(figsize=(7, 4))
+        # plot spectra together
+        fig, ax = plt.subplots(figsize=(7, 4))
         for i in range(len(wavelength_index)):
             spec = matrix[wavelength_index[i], :].T
-            plt.plot(
+            self.kinetics_set = np.c_[self.kinetics_set, spec]
+            ax.plot(
                 self.tatime,
                 spec,
                 label="{:.2f}".format(self.tawavelength[wavelength_index[i]]) + " nm",
                 linewidth=1,
             )
-        plt.title(self.filename)
+        ax.set_title(self.filestem)
         plt.rcParams.update(
             {
                 "font.size": 8,  # Default font size
@@ -1229,14 +1272,15 @@ class tamatrix_importer:
                 "ytick.labelsize": 8,  # Tick label size for y axis
             }
         )
-        plt.xlabel("Time (ps)")
-        plt.ylabel("ΔOD")
-        plt.xlim(-1, tmax)
-        plt.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        plt.legend(loc="best")
-        plt.show()
+        ax.set_xlabel("Time (ps)")
+        ax.set_ylabel("ΔOD")
+        ax.set_xlim(-1, tmax)
+        ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax.legend(loc="best")
+        fig.show()
+        return self.kinetics_set
 
-    def save_takinetics(self, name, wavelength_pts, mat):
+    def save_takinetics(self, wavelength_pts, tmax=1000, name=None, mat=None):
         """Plot and Save the TA kinetics at selected wavelengths. Saved file will be named as k_name
 
         Args:
@@ -1249,34 +1293,12 @@ class tamatrix_importer:
         """
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
-        wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
-        self.kinetics_set = self.tatime.copy()
+        if name is None:
+            name = self.filestem
+        self.kinetics_set = self.auto_takinetics(
+            self, wavelength_pts=wavelength_pts, mat=mat, tmax=tmax
+        )
         header_str = "Time(ps)\t"
-        for wavelength in wavelength_index:
-            header_str = (
-                header_str
-                + "k_"
-                + name
-                + "_"
-                + "{:.2f}".format(self.tawavelength[wavelength])
-                + "nm\t"
-            )
-        if mat == "original":
-            matrix = self.tamatrix.copy()
-        elif mat == "bgcorr":
-            matrix = self.bgcorr.copy()
-        else:
-            matrix = self.tcorr.copy()
-            print("output zero time corrected kinetics")
-        # plot spectra together
-        for i in range(len(wavelength_index)):
-            spec = matrix[wavelength_index[i], :].T
-            self.kinetics_set = np.c_[self.kinetics_set, spec]
-            plt.plot(
-                self.tatime,
-                spec,
-                label="{:.2f}".format(self.tawavelength[wavelength_index[i]]) + " nm",
-            )
         np.savetxt(
             "k_" + name,
             self.kinetics_set,
@@ -1284,11 +1306,6 @@ class tamatrix_importer:
             fmt="%1.5f",
             delimiter="\t",
         )
-        plt.xlabel("Time (ps)")
-        plt.ylabel("ΔOD")
-        plt.legend()
-        plt.show()
-
         return self.kinetics_set
 
     def get_kinetic(self, name, wavelength_pt, mat=None):
@@ -1317,8 +1334,9 @@ class tamatrix_importer:
         plt.show()
         return matrix[wavelength_index, :]
 
-    def return_kinetic(self, tamatrix, wavelength_pt):
+    def return_kinetic(self, wavelength_pt, mat=None):
         # plot spectra together
+        tamatrix = self.mat_selector(mat)
         diff = np.abs(self.tawavelength - wavelength_pt)
         wavelength_index = np.argmin(np.abs(diff))
         plt.plot(
