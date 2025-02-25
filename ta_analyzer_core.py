@@ -30,14 +30,28 @@ def mat_avg(name, select):
     Returns:
         str, str: The averaged matrix, the matrix array with all experiments loaded.
     """
-    first_array = np.loadtxt(name + str(select[0] + 1))
+    try:
+        first_array = np.loadtxt(name.with_name(name.stem + str(select[0] + 1)))
+    except Exception as e:
+        print(f"Error in loading file using Pathlib: {e}")
+        first_array = np.loadtxt(name + str(select[0] + 1))
     rows, columns = first_array.shape
     mat_array = np.zeros((rows, columns, len(select)))
     for i, x in enumerate(select):
-        mat_array[:, :, i] = np.loadtxt(name + str(x + 1))
+        try:
+            mat_array[:, :, i] = np.loadtxt(name.with_name(name.stem + str(x + 1)))
+        except Exception as e:
+            print(f"Error in loading file using Pathlib: {e}")
+            mat_array[:, :, i] = np.loadtxt(name + str(x + 1))
     sum_array = np.sum(mat_array, axis=2)
     avg_array = sum_array / len(select)
-    np.savetxt(name + "averaged", avg_array, fmt="%f", delimiter="\t")
+    try:
+        np.savetxt(
+            name.with_name(name.stem + "averaged"), avg_array, fmt="%f", delimiter="\t"
+        )
+    except Exception as e:
+        print(f"Error in saving file using Pathlib: {e}")
+        np.savetxt(name + "averaged", avg_array, fmt="%f", delimiter="\t")
     return avg_array, mat_array
 
 
@@ -76,7 +90,9 @@ class load_single:
         Args:
             file_name (str): The name of the file to be loaded. e.g. "expt_1"
         """
-        data = np.loadtxt(file_name)
+        self.filename = Path(file_name)
+        self.filestem = self.filename.stem
+        data = np.loadtxt(self.filename)
         self.tawavelength = data[:, 0]
         self.spec_ta = data[:, 1]
         self.spec_on = data[:, 2]
@@ -116,7 +132,8 @@ class load_spectra:
             Use num_spec = 1 instead for single experiment.
         """
 
-        self.file_inp = file_inp
+        self.file_inp = Path(file_inp)
+        self.file_inp_stem = self.file_inp.stem
         if select is None and (num_spec is None or num_spec == 1):
             self.num_spec = 1
             self.tamatrix_avg = np.loadtxt(self.file_inp)
@@ -164,7 +181,11 @@ class load_spectra:
         self.spec_1ps = self.tamatrix_avg[:, pt + 2]
         self.fig_s, self.ax_s = plt.subplots()
         self.ax_s.plot(self.tawavelength, self.spec_1ps)
-        self.ax_s.set_title(self.file_inp)
+        try:
+            self.ax_s.set_title(self.file_inp.stem)
+        except Exception as e:
+            print(f"Error in loading file using Pathlib: {e}")
+            self.ax_s.set_title(self.file_inp)
         self.ax_s.set_xlabel("Wavelength (nm)")
         self.ax_s.set_ylabel("ΔOD")
         return self.spec_1ps
@@ -207,7 +228,11 @@ class load_spectra:
         self.ax_k.legend()
         self.ax_k.set_xlabel("Time (Log scale ps)")
         self.ax_k.set_ylabel("ΔOD")
-        self.ax_k.set_title(self.file_inp)
+        try:
+            self.ax_k.set_title(self.file_inp.stem)
+        except Exception as e:
+            print(f"Error in loading file using Pathlib: {e}")
+            self.ax_k.set_title(self.file_inp)
 
         return self.trace_avg
 
@@ -244,7 +269,7 @@ class load_spectra:
         # print(result.fit_report())
         print("-------------------------------")
         print(
-            f"{self.file_inp} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm"
+            f"{self.file_inp.stem} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm"
         )
         print("-------------------------------")
         print(f"chi-square: {result.chisqr:11.6f}")
@@ -298,7 +323,7 @@ class load_spectra:
         ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
         ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
         # Centered title above subplots
-        fig.suptitle(self.file_inp, fontsize=10, ha="center")
+        fig.suptitle(self.file_inp.stem, fontsize=10, ha="center")
         plt.legend(loc="best")
         fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
@@ -474,9 +499,11 @@ class merge_glotaran:
         )
         self.header = self.glotaran_vis.header
         try:
-            # May need further work to save the file correctly 
+            # May need further work to save the file correctly
             np.savetxt(
-                self.glotaran_vis.filename.with_name(self.glotaran_vis.filestem+"_ir_merged").with_suffix(".ascii"),
+                self.glotaran_vis.filename.with_name(
+                    self.glotaran_vis.filestem + "_ir_merged"
+                ).with_suffix(".ascii"),
                 self.output_matrix,
                 header=self.header,
                 fmt="%s",
@@ -484,7 +511,7 @@ class merge_glotaran:
                 delimiter="\t",
             )
         except Exception as e:
-            print(f"Error in merging using Pathlib: {e}")    
+            print(f"Error in merging using Pathlib: {e}")
             np.savetxt(
                 self.glotaran_vis.filename.split(".")[-2] + "_ir_merged.ascii",
                 self.output_matrix,
@@ -493,7 +520,7 @@ class merge_glotaran:
                 comments="",
                 delimiter="\t",
             )
-            print('Load with filename')
+            print("Load with filename")
 
 
 class load_glotaran:
@@ -511,7 +538,7 @@ class load_glotaran:
         except Exception as e:
             print(f"Error in loading Glotaran file using Pathlib: {e}")
             self.filestem = dir.split(".")[-2]
-            print('Load with filename')
+            print("Load with filename")
         matrix = np.loadtxt(dir, skiprows=4, delimiter="\t", dtype=str)
         matrix[matrix == ""] = np.nan
         matrix = matrix.astype(np.float64)
@@ -700,13 +727,15 @@ class tamatrix_importer:
             # Load firstcol wave and find startrow and endrow
             # filename = input("Enter the filename for firstcol wave: ")
             # filename is the full directory while filestem is the name without extension
-            self.filename = filename
+
             try:
-                self.filestem = filename.stem
+                self.filename = Path(filename)
+                self.filestem = self.filename.stem
             except Exception as e:
                 print(f"Error in loading file using Pathlib: {e}")
+                self.filename = filename
                 self.filestem = filename.split(".")[-2]
-                print('Load with filename')
+                print("Load with filename")
             firstcol = np.loadtxt(self.filename)[:, 1]
             if self.startnm < np.min(firstcol):
                 self.startrow = np.argmin(firstcol)
@@ -756,7 +785,7 @@ class tamatrix_importer:
             except Exception as e:
                 print(f"Error in loading file using Pathlib: {e}")
                 self.filestem = load_spectra.file_inp.split(".")[-2]
-                print('Load with filename')
+                print("Load with filename")
 
         elif load_glotaran is not None:
             self.tawavelength = load_glotaran.tawavelength
@@ -768,7 +797,7 @@ class tamatrix_importer:
             except Exception as e:
                 print(f"Error in loading file using Pathlib: {e}")
                 self.filestem = load_glotaran.filename.split(".")[-2]
-                print('Load with filename')
+                print("Load with filename")
         """ else:
             self.tawavelength = np.loadtxt(tawavelength)
             self.tatime = np.loadtxt(tatime)
@@ -801,57 +830,89 @@ class tamatrix_importer:
         plt.colorbar()
         plt.show()
 
-    def save_all(self, filename=None, mat=None):
+    def save_all(self, filename=None, mat="tcorr"):
         """Save the time axis, wavelength axis and TA matrix. Saved files will be named as filename+"_tatime", filename+"_tawavelength", filename+"_tamatrix"
 
         Args:
             filename (str): directory to save the files. e.g. "C:/Users/xxx"
             mat (str): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         """
-        if mat is None:
-            matrix = self.tcorr.copy()
-            print("Background and Zero time corrected matrix is selected\n")
-        if mat == "original":
-            matrix = self.tamatrix.copy()
-            print("Original matrix is selected\n")
-        elif mat == "bgcorr":
-            matrix = self.bgcorr.copy()
-            print("Background corrected matrix is selected\n")
-        else:
-            matrix = self.tcorr.copy()
-            print("Background and Zero time corrected matrix is selected\n")
+        # if mat is None:
+        #     matrix = self.tcorr.copy()
+        #     print("Background and Zero time corrected matrix is selected\n")
+        # if mat == "original":
+        #     matrix = self.tamatrix.copy()
+        #     print("Original matrix is selected\n")
+        # elif mat == "bgcorr":
+        #     matrix = self.bgcorr.copy()
+        #     print("Background corrected matrix is selected\n")
+        # else:
+        #     matrix = self.tcorr.copy()
+        #     print("Background and Zero time corrected matrix is selected\n")
+        matrix = self.mat_selector(mat)
         if filename is None:
             filename = self.filestem
-        np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
-        print(filename + "_tawavelength has been saved\n")
-        np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
-        print(filename + "_tatime has been saved\n")
-        np.savetxt(filename + "_tamatrix", matrix, fmt="%1.5f")
-        print(filename + "_" + mat + "_tatime has been saved\n")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_tawavelength"),
+                self.tawavelength,
+                fmt="%1.5f",
+            )
+            print(filename + "_tawavelength has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tawavelength with Pathlib: {e}")
+            np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
+            print(filename + "_tawavelength has been saved without Pathilb\n")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_tatime"), self.tatime, fmt="%1.5f"
+            )
+            print(filename + "_tatime has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tatime with Pathlib: {e}")
+            np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
+            print(filename + "_tatime has been saved without Pathlib\n")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_" + mat), matrix, fmt="%1.5f"
+            )
+            print(filename + "_tamatrix has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tamatrix with Pathlib: {e}")
+            np.savetxt(filename + "_" + mat, matrix, fmt="%1.5f")
+            print(filename + "_" + mat + "_tamatrix has been saved without Pathlib\n")
 
-    def save_tamatrix(self, filename=None, mat=None):
+    def save_tamatrix(self, mat="tcorr", filename=None):
         """Save the TA matrix. Saved file will be named as filename+"_tamatrix"
 
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to tcorr.
         """
-        if mat is None:
-            matrix = self.tcorr.copy()
-            print("Background and Zero time corrected matrix is selected\n")
-        if mat == "original":
-            matrix = self.tamatrix.copy()
-            print("Original matrix is selected\n")
-        elif mat == "bgcorr":
-            matrix = self.bgcorr.copy()
-            print("Background corrected matrix is selected\n")
-        else:
-            matrix = self.tcorr.copy()
-            print("Background and Zero time corrected matrix is selected\n")
+        # if mat is None:
+        #     matrix = self.tcorr.copy()
+        #     print("Background and Zero time corrected matrix is selected\n")
+        # if mat == "original":
+        #     matrix = self.tamatrix.copy()
+        #     print("Original matrix is selected\n")
+        # elif mat == "bgcorr":
+        #     matrix = self.bgcorr.copy()
+        #     print("Background corrected matrix is selected\n")
+        # else:
+        #     matrix = self.tcorr.copy()
+        #     print("Background and Zero time corrected matrix is selected\n")
+        matrix = self.mat_selector(mat)
         if filename is None:
             filename = self.filestem
-        else:
-            np.savetxt(filename + "_" + mat + "_tamatrix", matrix, fmt="%1.5f")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_" + mat), matrix, fmt="%1.5f"
+            )
+            print(filename + "_tamatrix has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tamatrix with Pathlib: {e}")
+            np.savetxt(filename + "_" + mat, matrix, fmt="%1.5f")
+            print(filename + "_" + mat + "_tamatrix has been saved without Pathlib\n")
 
     def save_tatime(self, filename=None):
         """Save the time axis. Saved file will be named as filename+"_tatime"
@@ -859,9 +920,15 @@ class tamatrix_importer:
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
-        if filename is None:
-            filename = self.filestem
-        np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_tatime"), self.tatime, fmt="%1.5f"
+            )
+            print(filename + "_tatime has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tatime with Pathlib: {e}")
+            np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
+            print(filename + "_tatime has been saved without Pathlib\n")
 
     def save_tawavelength(self, filename=None):
         """Save the wavelength axis. Saved file will be named as filename+"_tawavelength"
@@ -869,9 +936,17 @@ class tamatrix_importer:
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
-        if filename is None:
-            filename = self.filestem
-        np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_tawavelength"),
+                self.tawavelength,
+                fmt="%1.5f",
+            )
+            print(filename + "_tawavelength has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tawavelength with Pathlib: {e}")
+            np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
+            print(filename + "_tawavelength has been saved without Pathilb\n")
 
     def save_axes(self, filename=None):
         """Save the time and wavelength axes. Saved files will be named as filename+"_tatime" and filename+"_tawavelength"
@@ -881,8 +956,26 @@ class tamatrix_importer:
         """
         if filename is None:
             filename = self.filestem
-        np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
-        np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_tawavelength"),
+                self.tawavelength,
+                fmt="%1.5f",
+            )
+            print(filename + "_tawavelength has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tawavelength with Pathlib: {e}")
+            np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
+            print(filename + "_tawavelength has been saved without Pathilb\n")
+        try:
+            np.savetxt(
+                self.filename.with_name(filename + "_tatime"), self.tatime, fmt="%1.5f"
+            )
+            print(filename + "_tatime has been saved\n")
+        except Exception as e:
+            print(f"Error in saving tatime with Pathlib: {e}")
+            np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
+            print(filename + "_tatime has been saved without Pathlib\n")
 
     def auto_bgcorr(self, points):
         """Background correction of the TA matrix using the negative time points. The number of time points taken as background should be given as input
@@ -1217,14 +1310,25 @@ class tamatrix_importer:
                 + "{:.2f}".format(self.tatime[time])
                 + "ps\t"
             )
-        np.savetxt(
-            "s_" + name,
-            self.spectra_set,
-            header=header_str,
-            fmt="%1.5f",
-            delimiter="\t",
-        )
-        print("File s_" + name + " has been saved\n")
+        try:
+            np.savetxt(
+                self.filename.with_name("s_" + name),
+                self.spectra_set,
+                header=header_str,
+                fmt="%1.5f",
+                delimiter="\t",
+            )
+            print("File s_" + name + " has been saved\n")
+        except Exception as e:
+            print(f"Error in saving spectra with Pathlib: {e}")
+            np.savetxt(
+                "s_" + name,
+                self.spectra_set,
+                header=header_str,
+                fmt="%1.5f",
+                delimiter="\t",
+            )
+            print("File s_" + name + " has been saved without Pathlib\n")
 
     def get_spectrum(
         self,
@@ -1235,18 +1339,28 @@ class tamatrix_importer:
         matrix = self.mat_selector(mat)
         diff = self.tatime.copy() - time_pt
         index = np.argmin(np.abs(diff))
-        np.savetxt(
-            "s_" + name + "_" + "{:.2f}".format(self.tatime[index]) + " ps",
-            matrix[:, index],
-            fmt="%1.5f",
-        )
-        print(
-            "File s_"
-            + name
-            + "_"
-            + "{:.2f}".format(self.tatime[index])
-            + " ps has been saved\n"
-        )
+        try:
+            np.savetxt(
+                self.filename.with_name(
+                    "s_" + name + "_" + "{:.2f}".format(self.tatime[index]) + " ps"
+                ),
+                matrix[:, index],
+                fmt="%1.5f",
+            )
+        except Exception as e:
+            print(f"Error in saving spectra with Pathlib: {e}")
+            np.savetxt(
+                "s_" + name + "_" + "{:.2f}".format(self.tatime[index]) + " ps",
+                matrix[:, index],
+                fmt="%1.5f",
+            )
+            print(
+                "File s_"
+                + name
+                + "_"
+                + "{:.2f}".format(self.tatime[index])
+                + " ps has been saved without Pathlib\n"
+            )
         plt.plot(
             self.tawavelength,
             matrix[:, index],
@@ -1334,13 +1448,25 @@ class tamatrix_importer:
             self, wavelength_pts=wavelength_pts, mat=mat, tmax=tmax
         )
         header_str = "Time(ps)\t"
-        np.savetxt(
-            "k_" + name,
-            self.kinetics_set,
-            header=header_str,
-            fmt="%1.5f",
-            delimiter="\t",
-        )
+        try:
+            np.savetxt(
+                self.filename.with_name("k_" + name),
+                self.kinetics_set,
+                header=header_str,
+                fmt="%1.5f",
+                delimiter="\t",
+            )
+            print("File k_" + name + " has been saved\n")
+        except Exception as e:
+            print(f"Error in saving kinetics with Pathlib: {e}")
+            np.savetxt(
+                "k_" + name,
+                self.kinetics_set,
+                header=header_str,
+                fmt="%1.5f",
+                delimiter="\t",
+            )
+            print("File k_" + name + " has been saved without Pathlib\n")
         return self.kinetics_set
 
     def get_kinetic(self, name, wavelength_pt, mat=None):
@@ -1353,16 +1479,45 @@ class tamatrix_importer:
             matrix[wavelength_index, :],
             label="{:.2f}".format(self.tawavelength[wavelength_index]) + " nm",
         )
-        np.savetxt(
-            "k_"
-            + name
-            + "_"
-            + "{:.2f}".format(self.tawavelength[wavelength_index])
-            + "nm",
-            matrix[wavelength_index, :].T,
-            fmt="%1.5f",
-            delimiter="\t",
-        )
+        try:
+            np.savetxt(
+                self.filename.with_name(
+                    "k_"
+                    + name
+                    + "_"
+                    + "{:.2f}".format(self.tawavelength[wavelength_index])
+                    + "nm"
+                ),
+                matrix[wavelength_index, :].T,
+                fmt="%1.5f",
+                delimiter="\t",
+            )
+            print(
+                "File k_"
+                + name
+                + "_"
+                + "{:.2f}".format(self.tawavelength[wavelength_index])
+                + "nm has been saved\n"
+            )
+        except Exception as e:
+            print(f"Error in saving kinetics with Pathlib: {e}")
+            np.savetxt(
+                "k_"
+                + name
+                + "_"
+                + "{:.2f}".format(self.tawavelength[wavelength_index])
+                + "nm",
+                matrix[wavelength_index, :].T,
+                fmt="%1.5f",
+                delimiter="\t",
+            )
+            print(
+                "File k_"
+                + name
+                + "_"
+                + "{:.2f}".format(self.tawavelength[wavelength_index])
+                + "nm has been saved without Pathlib\n"
+            )
         plt.xlabel("Time (ps)")
         plt.ylabel("ΔOD")
         plt.legend()
