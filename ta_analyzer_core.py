@@ -541,9 +541,11 @@ class plot_glotaran:
             self.ax_das.plot(
                 self.das[:, 2 * i],
                 self.das[:, 2 * i + 1],
-                label="Long-term"
-                if 1 / self.rate_array[i] > 10000.0
-                else f"{1 / self.rate_array[i]:.2f} ps",
+                label=(
+                    "Long-term"
+                    if 1 / self.rate_array[i] > 10000.0
+                    else f"{1 / self.rate_array[i]:.2f} ps"
+                ),
             )
             colorwaves(self.ax_das)
             self.ax_das.legend()
@@ -900,9 +902,7 @@ class tamatrix_importer:
         # Create contour plot
         fig, ax = plt.subplots()
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
-        ax.contour(
-            X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01]
-        )
+        ax.contour(X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01])
         plt.ylim(-1, 1)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Time (ps)")
@@ -946,9 +946,7 @@ class tamatrix_importer:
         # Create contour plot
         fig, ax = plt.subplots()
         Y, X = np.meshgrid(self.tatime, self.tawavelength)
-        ax.contour(
-            X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01]
-        )
+        ax.contour(X, Y, self.tcorr, [-0.01, -0.005, -0.0025, 0, 0.0025, 0.005, 0.01])
         plt.ylim(-1, 1)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Time (ps)")
@@ -1387,7 +1385,8 @@ class tamatrix_importer:
         else:
             y = np.mean(
                 matrix[
-                    wavelength_index - int(avg_pts / 2) : wavelength_index
+                    wavelength_index
+                    - int(avg_pts / 2) : wavelength_index
                     + int(avg_pts / 2),
                     :,
                 ],
