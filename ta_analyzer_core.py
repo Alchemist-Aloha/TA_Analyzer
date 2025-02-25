@@ -472,14 +472,28 @@ class merge_glotaran:
             )
         )
         self.header = self.glotaran_vis.header
-        np.savetxt(
-            self.glotaran_vis.filename.split(".")[0] + "_ir_merged.ascii",
-            self.output_matrix,
-            header=self.header,
-            fmt="%s",
-            comments="",
-            delimiter="\t",
-        )
+        try:
+            print(f"Error in merging using Pathlib: {e}")   
+            # May need further work to save the file correctly 
+            np.savetxt(
+                self.glotaran_vis.filename.withname(self.glotaran_vis.filestem+"_ir_merged").with_suffix(".ascii"),
+                self.output_matrix,
+                header=self.header,
+                fmt="%s",
+                comments="",
+                delimiter="\t",
+            )
+        except Exception as e:
+            print(f"Error in merging using Pathlib: {e}")    
+            np.savetxt(
+                self.glotaran_vis.filename.split(".")[-2] + "_ir_merged.ascii",
+                self.output_matrix,
+                header=self.header,
+                fmt="%s",
+                comments="",
+                delimiter="\t",
+            )
+            print('Load with filename')
 
 
 class load_glotaran:
@@ -492,6 +506,12 @@ class load_glotaran:
             dir (Pathlib.Path): The filename of the Glotaran input file
         """
         self.filename = dir
+        try:
+            self.filestem = dir.stem
+        except Exception as e:
+            print(f"Error in loading Glotaran file using Pathlib: {e}")
+            self.filestem = dir.split(".")[-2]
+            print('Load with filename')
         matrix = np.loadtxt(dir, skiprows=4, delimiter="\t", dtype=str)
         matrix[matrix == ""] = np.nan
         matrix = matrix.astype(np.float64)
@@ -681,7 +701,12 @@ class tamatrix_importer:
             # filename = input("Enter the filename for firstcol wave: ")
             # filename is the full directory while filestem is the name without extension
             self.filename = filename
-            self.filestem = filename.stem
+            try:
+                self.filestem = filename.stem
+            except Exception as e:
+                print(f"Error in loading file using Pathlib: {e}")
+                self.filestem = filename.split(".")[-2]
+                print('Load with filename')
             firstcol = np.loadtxt(self.filename)[:, 1]
             if self.startnm < np.min(firstcol):
                 self.startrow = np.argmin(firstcol)
@@ -726,14 +751,24 @@ class tamatrix_importer:
             self.tatime = load_spectra.tatime
             self.tamatrix = load_spectra.tamatrix_avg[:, 2:]
             self.filename = load_spectra.file_inp
-            self.filestem = load_spectra.file_inp.stem
+            try:
+                self.filestem = load_spectra.file_inp.stem
+            except Exception as e:
+                print(f"Error in loading file using Pathlib: {e}")
+                self.filestem = load_spectra.file_inp.split(".")[-2]
+                print('Load with filename')
 
         elif load_glotaran is not None:
             self.tawavelength = load_glotaran.tawavelength
             self.tatime = load_glotaran.tatime
             self.tcorr = load_glotaran.tamatrix
             self.filename = load_glotaran.filename
-            self.filestem = load_glotaran.filename.stem
+            try:
+                self.filestem = load_glotaran.filename.stem
+            except Exception as e:
+                print(f"Error in loading file using Pathlib: {e}")
+                self.filestem = load_glotaran.filename.split(".")[-2]
+                print('Load with filename')
         """ else:
             self.tawavelength = np.loadtxt(tawavelength)
             self.tatime = np.loadtxt(tatime)
@@ -1440,7 +1475,7 @@ class tamatrix_importer:
 
         print("-------------------------------")
         print(
-            f"{self.filename} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm"
+            f"{self.filestem} kinetics fit at {self.tawavelength[wavelength_index]:.2f} nm"
         )
         print("-------------------------------")
         print(f"chi-square: {result.chisqr:11.6f}")
@@ -1497,7 +1532,7 @@ class tamatrix_importer:
         ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
 
         # Centered title above subplots
-        fig.suptitle(self.filename, fontsize=10, ha="center")
+        fig.suptitle(self.filestem, fontsize=10, ha="center")
         plt.legend(loc="best")
         fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
@@ -1570,7 +1605,7 @@ class tamatrix_importer:
         ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
         ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
         # Centered title above subplots
-        fig.suptitle(self.filename, fontsize=10, ha="center")
+        fig.suptitle(self.filestem, fontsize=10, ha="center")
         plt.legend(loc="best")
         fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
