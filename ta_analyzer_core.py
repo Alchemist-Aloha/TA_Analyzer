@@ -122,7 +122,7 @@ class load_single:
 class load_spectra:
     """class to include single or multiple experiments (average) TA matrix
 
-    Attributes:
+    Args:
         file_inp (str): The name of the file to be loaded. e.g. "expt_". if num_spec = 1, file_inp should use full name, e.g. "expt_3".
         num_spec (int, optional): num_spec is the number of experiments to be loaded. e.g. 5. Note this will load expt_1, expt_2, expt_3, expt_4, expt_5. Defaults to None.
         select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5]. Defaults to None.
