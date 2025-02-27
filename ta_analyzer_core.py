@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +9,7 @@ import xarray as xr
 from matplotlib.colors import ListedColormap
 from scipy.stats import norm
 from tqdm import tqdm
-from pathlib import Path
+from itertools import cycle  # Import cycle
 
 """
 
@@ -549,6 +551,10 @@ class load_glotaran:
 
 def batch_load_glotaran(dir="."):
     """Batch load all the Glotaran input files in the directory"""
+    try:
+        dir = Path(dir)
+    except Exception as e:
+        print(f"Error in loading directory using Pathlib: {e}")
     if dir.exists():
         current_dir = Path(dir)
     else:
@@ -573,11 +579,12 @@ def batch_load_glotaran(dir="."):
 class plot_glotaran:
     """Class to plot the Glotaran output file. plot both traces and DASs"""
 
-    def __init__(self, dir):
+    def __init__(self, dir, low_threshold=0.07):
         """Initialize the class with the Glotaran output file. plot both traces and DASs
         Files: "_traces.ascii", "_DAS.ascii", "_summary.txt"
             Args:
                 dir (str): The directory of the file without the extension
+                low_threshold (num, optional): The lower threshold (ps) to remove ultrafast DAS. Defaults to 0.07.
         """
         rate_list = []
         error_list = []
@@ -606,23 +613,27 @@ class plot_glotaran:
         self.das = np.loadtxt(dir + "_DAS.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=(6, 3))
         self.fig_das.subplots_adjust(left=0.2)
+        self.ax_das.set_title(self.filename)
         if self.das.shape[1] != 2 * self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
-            self.ax_das.plot(
-                self.das[:, 2 * i],
-                self.das[:, 2 * i + 1],
-                label=(
-                    "Long-term"
-                    if 1 / self.rate_array[i] > 10000.0
-                    else f"{1 / self.rate_array[i]:.2f} ps"
-                ),
-            )
-            colorwaves(self.ax_das)
-            self.ax_das.legend()
-            self.ax_das.set_xlabel("Wavelength (nm)")
-            self.ax_das.set_ylabel("DAS")
-            # print(self.das[:,i], self.das[:,i+1])
+            if 1 / self.rate_array[i] < low_threshold:
+                continue
+            else:
+                self.ax_das.plot(
+                    self.das[:, 2 * i],
+                    self.das[:, 2 * i + 1],
+                    label=(
+                        "Long-term"
+                        if 1 / self.rate_array[i] > 10000.0
+                        else f"{1 / self.rate_array[i]:.2f} ps"
+                    ),
+                )
+                colorwaves(self.ax_das)
+                self.ax_das.legend()
+                self.ax_das.set_xlabel("Wavelength (nm)")
+                self.ax_das.set_ylabel("DAS")
+                # print(self.das[:,i], self.das[:,i+1])
         self.ax_das.axhline(y=0, c="black", linewidth=0.5, zorder=0)
 
         # Load the trace data
@@ -637,51 +648,63 @@ class plot_glotaran:
                 figsize=(6, 3),
             )
             self.fig_traces.subplots_adjust(wspace=0.1)
+            self.ax_traces_2.set_title(self.filename, fontsize=8)
             for i in range(int(self.traces.shape[1] / 2)):
-                # p = find_closest_value([5],self.traces[:,0])[0]
-                # time_log = np.concatenate((self.traces[:p,2*i],np.log10(self.traces[p:,2*i])),axis=0)
-                self.ax_traces.plot(
-                    self.traces[:, 2 * i],
-                    self.traces[:, 2 * i + 1],
-                    label=f"Trace {1 / self.rate_array[i]:.2f} ps",
-                )
-                self.ax_traces_2.plot(
-                    self.traces[:, 2 * i],
-                    self.traces[:, 2 * i + 1],
-                    label=f"Trace {1 / self.rate_array[i]:.2f} ps",
-                )
-                self.ax_traces.set_xlim(-1, 1)
-                self.ax_traces_2.set_xlim(1, len(self.traces[:, 2 * i]))
-                self.ax_traces.spines["right"].set_visible(False)
-                self.ax_traces_2.spines["left"].set_visible(False)
-                self.ax_traces.yaxis.tick_left()
-                self.ax_traces.tick_params(labelright=False)
-                self.ax_traces_2.tick_params(axis="y", labelleft=False)
-                self.ax_traces_2.yaxis.tick_right()
-                d = 0.5  # proportion of vertical to horizontal extent of the slanted line
-                kwargs = dict(
-                    marker=[(-1, -d), (1, d)],
-                    markersize=12,
-                    linestyle="none",
-                    color="k",
-                    mec="k",
-                    mew=1,
-                    clip_on=False,
-                )
-                self.ax_traces.plot(
-                    [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs
-                )
-                self.ax_traces_2.plot(
-                    [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs
-                )
-                colorwaves(self.ax_traces)
-                colorwaves(self.ax_traces_2)
-                # self.ax_traces.plot(time_log, self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
-                self.ax_traces_2.legend(loc="center right")
-                self.ax_traces_2.set_xscale("log")
-                self.ax_traces_2.set_xlabel("Time (ps)")
-                self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
-                self.ax_traces.set_ylabel("Amplitude")
+                if 1 / self.rate_array[i] < low_threshold:
+                    continue
+                else:
+                    # p = find_closest_value([5],self.traces[:,0])[0]
+                    # time_log = np.concatenate((self.traces[:p,2*i],np.log10(self.traces[p:,2*i])),axis=0)
+                    self.ax_traces.plot(
+                        self.traces[:, 2 * i],
+                        self.traces[:, 2 * i + 1],
+                        label=(
+                        "Long-term"
+                        if 1 / self.rate_array[i] > 10000.0
+                        else f"{1 / self.rate_array[i]:.2f} ps"
+                    ),
+                    )
+                    self.ax_traces_2.plot(
+                        self.traces[:, 2 * i],
+                        self.traces[:, 2 * i + 1],
+                        label=(
+                        "Long-term"
+                        if 1 / self.rate_array[i] > 10000.0
+                        else f"{1 / self.rate_array[i]:.2f} ps"
+                    ),
+                    )
+                    self.ax_traces.set_xlim(-1, 1)
+                    self.ax_traces_2.set_xlim(1, len(self.traces[:, 2 * i]))
+                    self.ax_traces.spines["right"].set_visible(False)
+                    self.ax_traces_2.spines["left"].set_visible(False)
+                    self.ax_traces.yaxis.tick_left()
+                    self.ax_traces.tick_params(labelright=False)
+                    self.ax_traces_2.tick_params(axis="y", labelleft=False)
+                    self.ax_traces_2.yaxis.tick_right()
+                    d = 0.5  # proportion of vertical to horizontal extent of the slanted line
+                    kwargs = dict(
+                        marker=[(-1, -d), (1, d)],
+                        markersize=12,
+                        linestyle="none",
+                        color="k",
+                        mec="k",
+                        mew=1,
+                        clip_on=False,
+                    )
+                    self.ax_traces.plot(
+                        [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs
+                    )
+                    self.ax_traces_2.plot(
+                        [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs
+                    )
+                    colorwaves(self.ax_traces)
+                    colorwaves(self.ax_traces_2)
+                    # self.ax_traces.plot(time_log, self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
+                    self.ax_traces_2.legend(loc="center right")
+                    self.ax_traces_2.set_xscale("log")
+                    self.ax_traces_2.set_xlabel("Time (ps)")
+                    self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
+                    self.ax_traces.set_ylabel("Amplitude")
         except Exception as e:
             print(f"No trace data found or error in loading trace data: {e}")
 
@@ -2186,8 +2209,13 @@ def colorwaves(ax):
         "#CCB974",
         "#64B5CD",
     ]
-
+    color_cycle = cycle(colors)
     # Set the color for each line
-    for i, line in enumerate(lines):
-        line.set_color(colors[i])
+    # for i, line in enumerate(lines):
+    #     line.set_color(colors[i])
+    for line in lines:
+        if (
+            line.get_label().startswith("_child") == False
+        ):  # Check if line has a label (and is not default)
+            line.set_color(next(color_cycle))  # Assign color and move to next color
     # ax.legend()
