@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
@@ -84,14 +83,13 @@ def load_tawavelength(mat):
 
 
 class load_single:
-    """Class to load a single experiment TA spectrum"""
-
-    def __init__(self, file_name):
-        """Initialize the class with the file name
+    """Initialize the class with the file name
 
         Args:
             file_name (str): The name of the file to be loaded. e.g. "expt_1"
-        """
+    """
+
+    def __init__(self, file_name):
         self.filename = Path(file_name)
         self.filestem = self.filename.stem
         data = np.loadtxt(self.filename)
@@ -122,18 +120,18 @@ class load_single:
 
 
 class load_spectra:
+    """class to include single or multiple experiments (average) TA matrix
+
+    Attributes:
+        file_inp (str): The name of the file to be loaded. e.g. "expt_". if num_spec = 1, file_inp should use full name, e.g. "expt_3".
+        num_spec (int, optional): num_spec is the number of experiments to be loaded. e.g. 5. Note this will load expt_1, expt_2, expt_3, expt_4, expt_5. Defaults to None.
+        select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5]. Defaults to None.
+
+    Notes:
+        select will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
+        Use num_spec = 1 instead for single experiment.
+    """
     def __init__(self, file_inp, num_spec=None, select=None):
-        """class to include single or multiple experiments (average) TA matrix
-
-        Args:
-            file_inp (str): The name of the file to be loaded. e.g. "expt_". if num_spec = 1, file_inp should use full name, e.g. "expt_3".
-            num_spec (int, optional): num_spec is the number of experiments to be loaded. e.g. 5. Note this will load expt_1, expt_2, expt_3, expt_4, expt_5. Defaults to None.
-            select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5]. Defaults to None.
-        Notes:
-            select will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
-            Use num_spec = 1 instead for single experiment.
-        """
-
         self.file_inp = Path(file_inp)
         self.file_inp_stem = self.file_inp.stem
         if select is None and (num_spec is None or num_spec == 1):
@@ -171,7 +169,6 @@ class load_spectra:
             self.mat_array - obj_bg.tamatrix_avg[:, :, np.newaxis] * modifier
         )
 
-    # plot 1ps spectrum
     def get_1ps(self):
         """Get the 1ps spectrum and plot it
 
@@ -192,7 +189,7 @@ class load_spectra:
         self.ax_s.set_ylabel("ΔOD")
         return self.spec_1ps
 
-    # plot multiple parallel traces to see photodamage
+
     def get_traces(self, wavelength, disable_plot=None):
         """Get the traces at a specific wavelength and plot them
 
@@ -247,6 +244,19 @@ class load_spectra:
         w1_vary=None,
         w12_vary=None,
     ):
+        """Fit the kinetics at a specific wavelength
+        
+        Args:
+            wavelength (num): The wavelength to be fitted
+            num_of_exp (int, optional): Number of exponential to be fitted. Defaults to None.
+            params (lmfit.Parameters, optional): The initial parameters for the fitting. Defaults to None.
+            time_split (num, optional): The time point to split the plot. Defaults to None.
+            w1_vary (bool, optional): Vary the w1 parameter. Defaults to None.
+            w12_vary (bool, optional): Vary the w12 parameter. Defaults to None.
+            
+        Returns:
+            lmfit.ModelResult: The result of the fitting
+        """
         if w1_vary is None:
             w1_vary = True
         if w12_vary is None:
@@ -374,15 +384,14 @@ class load_spectra:
 
 
 class compare_traces:
-    """compare traces from load_spectra object"""
+    """compare traces from load_spectra object
+    
+    Args:
+        obj (load_spectra): first load_spectra object
+        wavelength (num): wavelength to be compared
+    """
 
     def __init__(self, obj, wavelength):
-        """initialize the class with the first load_spectra object and wavelength to compare
-
-        Args:
-            obj (load_spectra): load_spectra object
-            wavelength (num): wavelength to be compared
-        """
         self.wavelength = wavelength
         self.tatime = obj.tatime
         trace = obj.get_traces(wavelength, disable_plot=True).reshape(1, -1)
@@ -397,7 +406,7 @@ class compare_traces:
         """add traces from another load_spectra object
 
         Args:
-            obj (Load_spectra): load_spectra object
+            obj (load_spectra): load_spectra object
             wavelength (num, optional): wavelength to be added if want to compare traces at diff wavelength. Defaults to None will use the wavelength from first object.
         """
         self.name_list.append(obj.file_inp)
@@ -433,18 +442,17 @@ class compare_traces:
 
 
 class glotaran:
-    """Class to export the IGOR generated TAmatrix to Glotaran input format"""
+    """Class to export the IGOR generated TAmatrix to Glotaran input format. Initialize the class with the TA matrix (Output from IGOR macro auto_tcorr. Without time and wavelength axis.
+    NOT original TAMatrix like file), time axis and wavelength axis. Use SaveMatrix()macro in IGOR to get those inputs.
+    Output file will be named as matrix_corr+"glo.ascii"
+
+    Args:
+        matrix_corr (str): The filename of the TA matrix file to be loaded.
+        tatime (str): The filename of the time axis
+        tawavelength (str): The filename of the wavelength axis
+    """
 
     def __init__(self, matrix_corr, tatime, tawavelength):
-        """Initialize the class with the TA matrix (Output from IGOR macro auto_tcorr. Without time and wavelength axis.
-        NOT original TAMatrix like file), time axis and wavelength axis. Use SaveMatrix()macro in IGOR to get those inputs.
-        Output file will be named as matrix_corr+"glo.ascii"
-
-        Args:
-            matrix_corr (str): The filename of the TA matrix file to be loaded.
-            tatime (str): The filename of the time axis
-            tawavelength (str): The filename of the wavelength axis
-        """
         self.filename = Path(matrix_corr)
         self.filestem = self.filename.stem
         self.tatime = np.loadtxt(tatime)
@@ -475,16 +483,17 @@ class glotaran:
 
 
 class merge_glotaran:
-    """Class to merge the Glotaran output files from visible and IR region"""
+    """Class to merge the Glotaran input files from visible and IR region
+    The output will be saved as filename+"_ir_merged.ascii"
+    Maybe write this as a function instead
+    Args:
+        glotaran_vis (load_glotaran): The load_glotaran object of the visible region
+        glotaran_ir (load_glotaran): The load_glotaran object of the IR region
+        vis_max (num): The maximum wavelength of the visible region
+        ir_min (num): The minimum wavelength of the IR region
+    """
 
     def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
-        """Initialize the class with the Glotaran output files from visible and IR region. The output will be saved as filename+"_ir_merged.ascii"
-        Args:
-            glotaran_vis (load_glotaran): The load_glotaran object of the visible region
-            glotaran_ir (load_glotaran): The load_glotaran object of the IR region
-            vis_max (num): The maximum wavelength of the visible region
-            ir_min (num): The minimum wavelength of the IR region
-        """
         self.glotaran_vis = glotaran_vis
         self.glotaran_ir = glotaran_ir
         if np.array_equal(self.glotaran_vis.tatime, self.glotaran_ir.tatime):
@@ -526,14 +535,13 @@ class merge_glotaran:
 
 
 class load_glotaran:
-    """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis"""
+    """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis
+    
+    Args:
+        dir (str): The filename of the Glotaran input file to be loaded.
+    """
 
     def __init__(self, dir):
-        """Initialize the class with the Glotaran input file
-
-        Args:
-            dir (Pathlib.Path): The filename of the Glotaran input file
-        """
         self.filename = dir
         try:
             self.filestem = dir.stem
@@ -550,7 +558,26 @@ class load_glotaran:
 
 
 def batch_load_glotaran(dir="."):
-    """Batch load all the Glotaran input files in the directory"""
+    """Batch load all the Glotaran input files in the directory and process them.
+    This function scans the specified directory for .ascii files, loads each file using
+    the load_glotaran function, processes them with tamatrix_importer, and automatically
+    extracts time-resolved spectra at specific time points.
+    Args:
+        dir (str, optional): The directory path where Glotaran input files (.ascii) are stored.
+                            Defaults to the current directory (".").
+    Returns:
+        tuple: A tuple containing three elements:
+            - ascii_files_list (list): List of Path objects for all found .ascii files.
+            - glotaran_instance_list (list): List of processed Glotaran objects.
+            - glotaran_instance_dict (dict): Dictionary mapping filenames (without extension)
+              to their corresponding Glotaran objects.
+    Raises:
+        Exception: If there is an error loading the directory with Pathlib.
+    Notes:
+        - The function automatically applies auto_taspectra to each loaded file with
+          predefined time points [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].
+        - If the directory doesn't exist, the function prints "Invalid directory" and returns None.
+    """
     try:
         dir = Path(dir)
     except Exception as e:
@@ -577,15 +604,16 @@ def batch_load_glotaran(dir="."):
 
 
 class plot_glotaran:
-    """Class to plot the Glotaran output file. plot both traces and DASs"""
+    """Class to plot the Glotaran output file. 
+    Plot both traces and DASs Files "_traces.ascii", "_DAS.ascii", "_summary.txt"
+    Args:
+        dir (str): The directory of the file without the extension
+        low_threshold (num, optional): The lower threshold (ps) to remove ultrafast DAS. Defaults to 0.07.
+    Raises:
+        Exception: If there is an error loading the directory with Pathlib.
+    """
 
     def __init__(self, dir, low_threshold=0.07):
-        """Initialize the class with the Glotaran output file. plot both traces and DASs
-        Files: "_traces.ascii", "_DAS.ascii", "_summary.txt"
-            Args:
-                dir (str): The directory of the file without the extension
-                low_threshold (num, optional): The lower threshold (ps) to remove ultrafast DAS. Defaults to 0.07.
-        """
         rate_list = []
         error_list = []
         self.filename = dir
@@ -659,19 +687,19 @@ class plot_glotaran:
                         self.traces[:, 2 * i],
                         self.traces[:, 2 * i + 1],
                         label=(
-                        "Long-term"
-                        if 1 / self.rate_array[i] > 10000.0
-                        else f"{1 / self.rate_array[i]:.2f} ps"
-                    ),
+                            "Long-term"
+                            if 1 / self.rate_array[i] > 10000.0
+                            else f"{1 / self.rate_array[i]:.2f} ps"
+                        ),
                     )
                     self.ax_traces_2.plot(
                         self.traces[:, 2 * i],
                         self.traces[:, 2 * i + 1],
                         label=(
-                        "Long-term"
-                        if 1 / self.rate_array[i] > 10000.0
-                        else f"{1 / self.rate_array[i]:.2f} ps"
-                    ),
+                            "Long-term"
+                            if 1 / self.rate_array[i] > 10000.0
+                            else f"{1 / self.rate_array[i]:.2f} ps"
+                        ),
                     )
                     self.ax_traces.set_xlim(-1, 1)
                     self.ax_traces_2.set_xlim(1, len(self.traces[:, 2 * i]))
@@ -710,7 +738,21 @@ class plot_glotaran:
 
 
 class tamatrix_importer:
-    """Class to import the TA matrix from the file. The input may vary from filename to Load_spectra object or load_glotaran object"""
+    """Class to import the TA matrix from the file. 
+    The input may vary from filename to Load_spectra object or load_glotaran objectInitialize the class with the filename, start and end wavelength to be loaded. 
+    If no filename is given, the object can be loaded from Load_spectra object or load_glotaran object
+
+    Args:
+        filename (Pathlib.Path, optional): The filename of the TA matrix file to be loaded.
+        startnm (num, optional): The start wavelength to be loaded. Defaults to 0.
+        endnm (num, optional): The end wavelength to be loaded. Defaults to 1200 nm.
+        load_spectra (load_spectra, optional): The load_spectra object to be loaded.
+        load_glotaran (load_glotaran, optional): The load_glotaran object to be loaded.
+        tamatrix (str, optional): The filename of the TA matrix file to be loaded. NOT WORKING.
+        tatime (str, optional): The filename of the time axis file to be loaded. NOT WORKING.
+        tawavelength (str, optional): The filename of the wavelength axis file to be loaded. NOT WORKING.
+        name (str, optional): The name of the object. Defaults to filename.
+    """
 
     def __init__(
         self,
@@ -724,19 +766,6 @@ class tamatrix_importer:
         tawavelength=None,
         name=None,
     ):
-        """Initialize the class with the filename, start and end wavelength to be loaded. If no filename is given, the object can be loaded from Load_spectra object or load_glotaran object
-
-        Args:
-            filename (Pathlib.Path, optional): The filename of the TA matrix file to be loaded.
-            startnm (num, optional): The start wavelength to be loaded. Defaults to 0.
-            endnm (num, optional): The end wavelength to be loaded. Defaults to 1200 nm.
-            load_spectra (load_spectra, optional): The load_spectra object to be loaded.
-            load_glotaran (load_glotaran, optional): The load_glotaran object to be loaded.
-            tamatrix (str, optional): The filename of the TA matrix file to be loaded. NOT WORKING.
-            tatime (str, optional): The filename of the time axis file to be loaded. NOT WORKING.
-            tawavelength (str, optional): The filename of the wavelength axis file to be loaded. NOT WORKING.
-            name (str, optional): The name of the object. Defaults to filename.
-        """
         if startnm is None:
             self.startnm = 0
         else:
@@ -912,18 +941,6 @@ class tamatrix_importer:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to tcorr.
         """
-        # if mat is None:
-        #     matrix = self.tcorr.copy()
-        #     print("Background and Zero time corrected matrix is selected\n")
-        # if mat == "original":
-        #     matrix = self.tamatrix.copy()
-        #     print("Original matrix is selected\n")
-        # elif mat == "bgcorr":
-        #     matrix = self.bgcorr.copy()
-        #     print("Background corrected matrix is selected\n")
-        # else:
-        #     matrix = self.tcorr.copy()
-        #     print("Background and Zero time corrected matrix is selected\n")
         matrix = self.mat_selector(mat)
         if filename is None:
             filename = self.filestem
@@ -1062,6 +1079,9 @@ class tamatrix_importer:
 
         Returns:
             2darray: The zero time corrected TA matrix
+            
+        Raises:
+            Exception: If the bgcorr matrix is not found
         """
 
         # import correction line from drawing script
@@ -1085,8 +1105,6 @@ class tamatrix_importer:
             self.tcorr[i, :] = np.interp(time_temp, self.tatime, oldmatrix[i, :])
             # Add the following smoothing line to clean up the spectra, with a slight loss in time resolution.
             # newmatrix[i, :] = np.convolve(kin_temp2[i, :], np.ones(3)/3, mode='same')
-        # save tcorred matrix
-        # np.savetxt(newmatrixname, newmatrix, fmt='%1.5f')
 
         # Create contour plot with plot_contour()
         # Create contour plot
@@ -1144,13 +1162,28 @@ class tamatrix_importer:
 
         return self.tcorr
 
-    def glotaran(self):
+    def glotaran(self, mat="tcorr"):
         """Export the background and zerotime corrected TA matrix to Glotaran input format (legacy JAVA version). Saved file will be named as filename+"glo.ascii"
         Don't need this array in pyglotaran.
+        Args:
+            mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         """
-        glotaran(self.tcorr, self.tatime, self.tawavelength)
+        output_matrix = self.mat_selector(mat)
+        output_matrix = np.append(
+            self.tatime.reshape(1, -1), output_matrix, axis=0)
+        output_matrix = np.append(
+            np.append("", self.tawavelength).reshape(1, -1).T, output_matrix, axis=1)
+        header = self.filestem + "\n\nTime explicit\nintervalnr " + str(len(self.tatime))
+        np.savetxt(
+            self.filename.with_suffix(".ascii"),
+            output_matrix,
+            header=header,
+            fmt="%s",
+            comments="",
+            delimiter="\t",
+        )
 
-    def pyglotaran(self, mat=None):
+    def pyglotaran(self, mat="tcorr"):
         """
         export tcorr matrix to pyglotaran xarray dataset
         e.g.
@@ -1247,35 +1280,7 @@ class tamatrix_importer:
                 1000,
                 1500,
             ]
-        """
-        if mat is None:
-            try:   
-                matrix = self.tcorr.copy()
-            except:
-                try:
-                    matrix = self.bgcorr.copy()
-                    print('Background corrected matrix used')
-                except:
-                    matrix = self.tamatrix.copy()
-                    print('Original matrix used')
-        elif mat == 'original':
-            matrix = self.tamatrix.copy()
-        elif mat == 'bgcorr':
-            matrix = self.bgcorr.copy()
-        elif mat == 'tcorr':
-            matrix = self.tcorr.copy()
-        else:
-            try:   
-                matrix = self.tcorr.copy()
-                print('Invalid mat value. Use tcorrrected matrix')
-            except:
-                try:
-                    matrix = self.bgcorr.copy()
-                    print('Invalid mat value. Background corrected matrix used')
-                except:
-                    matrix = self.tamatrix.copy()
-                    print('Invalid mat value. Original matrix used')
-        """
+
         matrix = self.mat_selector(mat)
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
@@ -1412,10 +1417,14 @@ class tamatrix_importer:
 
     def auto_takinetics(self, wavelength_pts, mat=None, tmax=1000):
         """Plot the TA kinetics at selected wavelengths
+        
         Args:
             wavelength_pts (list): The wavelengths to be plotted.
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
             tmax (num, optional): The maximum time to be plotted. Defaults to 1000.
+        
+        Returns:
+            2darray: The kinetics set
         """
         self.kinetics_set = self.tatime.copy()
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
@@ -1493,6 +1502,14 @@ class tamatrix_importer:
         return self.kinetics_set
 
     def get_kinetic(self, name, wavelength_pt, mat=None):
+        """Get the kinetics at a specified wavelength
+        Args:
+            name (str): The name of the file.
+            wavelength_pt (float): The wavelength at which to get the kinetics.
+            mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
+        Returns:
+            1darray: The kinetics at the specified wavelength
+        """
         matrix = self.mat_selector(mat)
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength_pt)
@@ -1548,6 +1565,15 @@ class tamatrix_importer:
         return matrix[wavelength_index, :]
 
     def return_kinetic(self, wavelength_pt, mat=None):
+        """Return the kinetics at a specified wavelength
+        
+        Args:
+            wavelength_pt (float): The wavelength at which to return the kinetics.
+            mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
+            
+        Returns:
+            1darray: The kinetics at the specified wavelength
+        """
         # plot spectra together
         tamatrix = self.mat_selector(mat)
         diff = np.abs(self.tawavelength - wavelength_pt)
@@ -1791,6 +1817,7 @@ class tamatrix_importer:
 
     def fit_correlation(self, num_of_exp):
         """Fit the cross-correlation curve to determine the zero time.
+        
         Args:
             num_of_exp (int): The number of exponentials to use in the fitting model.
         """
@@ -1848,7 +1875,7 @@ def find_closest_value(list1, list2):
         list2 (list): The list of values to search for the closest value.
 
     Returns:
-        _type_: _description_
+        list: The list of indices of the closest values in list2 for each element in list1.
     """
     array1 = np.array(list1)
     array2 = np.array(list2)
@@ -1867,6 +1894,14 @@ def find_closest_value(list1, list2):
 
 # Plot contour from files
 def plot_contour_file(tatime_file, tawavelength_file, tamatrix_file, max_point):
+    """Plot a contour plot of the TA matrix from files.
+    
+    Args:
+        tatime_file (str): The file containing the time points of the TA data.
+        tawavelength_file (str): The file containing the wavelength points of the TA data.
+        tamatrix_file (str): The file containing the TA matrix.
+        max_point (int): The maximum time (ps) to plot.
+    """
     tatime = np.loadtxt(tatime_file)
     tawavelength = np.loadtxt(tawavelength_file)
     tamatrix = np.loadtxt(tamatrix_file)
@@ -1882,6 +1917,14 @@ def plot_contour_file(tatime_file, tawavelength_file, tamatrix_file, max_point):
 
 # Plot contour with numpy arrays
 def plot_contour(tatime, tawavelength, tamatrix, max_point):
+    """Plot a contour plot of the TA matrix.
+    
+    Args:
+        tatime (array-like): The time points of the TA data.
+        tawavelength (array-like): The wavelength points of the TA data.
+        tamatrix (array-like): The TA matrix.
+        max_point (int): The maximum time (ps) to plot.
+    """
     # Create contour plot
     Y, X = np.meshgrid(tatime, tawavelength)
     plt.contourf(
@@ -1890,16 +1933,6 @@ def plot_contour(tatime, tawavelength, tamatrix, max_point):
     plt.colorbar()
     plt.ylim(-1, max_point)
     plt.show()
-
-
-def save_txt(array, file):
-    """Save a numpy array to a text file.
-
-    Args:
-        array (array-like): The array to be saved.
-        file (str): The name of the file to save the array to.
-    """
-    np.savetxt(array, file, fmt="%1.5f")
 
 
 def polynomial_func(x, a, b, c):
@@ -1946,6 +1979,7 @@ def polyfit(y, x, weights):
 
 def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     """Multi-exponential function for fitting TA data.
+    
     Args:
         t (array-like): Time points.
         w0 (float): Gaussian distribution width for IRF fitting. Use gaussian integral to fit the IRF.
@@ -1961,6 +1995,7 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
         w10 (float): Zero time.
         w11 (float): Pre-zero offset.
         w12 (float): Long-terme offset.
+        
     Returns:
         array-like: The fitted data.
     """
@@ -2053,6 +2088,7 @@ def params_init(
     w12_vary=None,
 ):
     """Initialize parameters for the TA Analyzer.
+
     Args:
         num_of_exp (int): Number of experiments.
         w0_value (float, optional): Initial value for w0. Defaults to 0.1.
@@ -2106,9 +2142,13 @@ def params_init(
         w12_max (float, optional): Maximum value for w12. Defaults to 0.5.
         w12_vary (bool, optional): Whether w12 varies. Defaults to None.
 
-
     Returns:
         lmfit.Parameters: Initialized parameters for the TA Analyzer.
+
+    Note:
+        - The vary flags for parameters are automatically set based on num_of_exp to enable
+          only the parameters needed for the specified number of components.
+
     """
     if w0_vary is None:
         w0_vary = True
@@ -2189,12 +2229,18 @@ def params_init(
 
 def colorwaves(ax):
     """
-    Change the colors of the lines in the given Axes object.
-
+    Change the colors of the lines in the given Axes object using a predefined color cycle.
+    This function applies a custom color scheme to lines in a matplotlib plot,
+    skipping lines that have labels starting with "_child".
+    
     Args:
-        ax (matplotlib.axes.Axes): The Axes object containing the lines.
-        colors (list of str): A list of colors to apply to the lines.
+        ax (matplotlib.axes.Axes): The Axes object containing the lines to colorize.
+    Notes:
+        - Uses a predefined list of 10 colors in a cyclical pattern.
+        - Only changes colors of lines that don't have labels starting with "_child".
+        - Does not automatically display the legend.
     """
+
     # Ensure the number of colors matches the number of lines
     lines = ax.get_lines()
     colors = [
@@ -2214,8 +2260,8 @@ def colorwaves(ax):
     # for i, line in enumerate(lines):
     #     line.set_color(colors[i])
     for line in lines:
-        if (
-            line.get_label().startswith("_child") == False
+        if not (
+            line.get_label().startswith("_child")
         ):  # Check if line has a label (and is not default)
             line.set_color(next(color_cycle))  # Assign color and move to next color
     # ax.legend()
