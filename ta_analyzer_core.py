@@ -85,8 +85,8 @@ def load_tawavelength(mat):
 class load_single:
     """Initialize the class with the file name
 
-        Args:
-            file_name (str): The name of the file to be loaded. e.g. "expt_1"
+    Args:
+        file_name (str): The name of the file to be loaded. e.g. "expt_1"
     """
 
     def __init__(self, file_name):
@@ -131,6 +131,7 @@ class load_spectra:
         select will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
         Use num_spec = 1 instead for single experiment.
     """
+
     def __init__(self, file_inp, num_spec=None, select=None):
         self.file_inp = Path(file_inp)
         self.file_inp_stem = self.file_inp.stem
@@ -189,7 +190,6 @@ class load_spectra:
         self.ax_s.set_ylabel("ΔOD")
         return self.spec_1ps
 
-
     def get_traces(self, wavelength, disable_plot=None):
         """Get the traces at a specific wavelength and plot them
 
@@ -245,7 +245,7 @@ class load_spectra:
         w12_vary=None,
     ):
         """Fit the kinetics at a specific wavelength
-        
+
         Args:
             wavelength (num): The wavelength to be fitted
             num_of_exp (int, optional): Number of exponential to be fitted. Defaults to None.
@@ -253,7 +253,7 @@ class load_spectra:
             time_split (num, optional): The time point to split the plot. Defaults to None.
             w1_vary (bool, optional): Vary the w1 parameter. Defaults to None.
             w12_vary (bool, optional): Vary the w12 parameter. Defaults to None.
-            
+
         Returns:
             lmfit.ModelResult: The result of the fitting
         """
@@ -385,7 +385,7 @@ class load_spectra:
 
 class compare_traces:
     """compare traces from load_spectra object
-    
+
     Args:
         obj (load_spectra): first load_spectra object
         wavelength (num): wavelength to be compared
@@ -536,7 +536,7 @@ class merge_glotaran:
 
 class load_glotaran:
     """Class to load the Glotaran input file. Output will be the time axis, wavelength axis and the TA matrix without time and wavelength axis
-    
+
     Args:
         dir (str): The filename of the Glotaran input file to be loaded.
     """
@@ -604,7 +604,7 @@ def batch_load_glotaran(dir="."):
 
 
 class plot_glotaran:
-    """Class to plot the Glotaran output file. 
+    """Class to plot the Glotaran output file.
     Plot both traces and DASs Files "_traces.ascii", "_DAS.ascii", "_summary.txt"
     Args:
         dir (str): The directory of the file without the extension
@@ -738,8 +738,8 @@ class plot_glotaran:
 
 
 class tamatrix_importer:
-    """Class to import the TA matrix from the file. 
-    The input may vary from filename to Load_spectra object or load_glotaran objectInitialize the class with the filename, start and end wavelength to be loaded. 
+    """Class to import the TA matrix from the file.
+    The input may vary from filename to Load_spectra object or load_glotaran objectInitialize the class with the filename, start and end wavelength to be loaded.
     If no filename is given, the object can be loaded from Load_spectra object or load_glotaran object
 
     Args:
@@ -1079,7 +1079,7 @@ class tamatrix_importer:
 
         Returns:
             2darray: The zero time corrected TA matrix
-            
+
         Raises:
             Exception: If the bgcorr matrix is not found
         """
@@ -1169,11 +1169,13 @@ class tamatrix_importer:
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         """
         output_matrix = self.mat_selector(mat)
+        output_matrix = np.append(self.tatime.reshape(1, -1), output_matrix, axis=0)
         output_matrix = np.append(
-            self.tatime.reshape(1, -1), output_matrix, axis=0)
-        output_matrix = np.append(
-            np.append("", self.tawavelength).reshape(1, -1).T, output_matrix, axis=1)
-        header = self.filestem + "\n\nTime explicit\nintervalnr " + str(len(self.tatime))
+            np.append("", self.tawavelength).reshape(1, -1).T, output_matrix, axis=1
+        )
+        header = (
+            self.filestem + "\n\nTime explicit\nintervalnr " + str(len(self.tatime))
+        )
         np.savetxt(
             self.filename.with_suffix(".ascii"),
             output_matrix,
@@ -1417,12 +1419,12 @@ class tamatrix_importer:
 
     def auto_takinetics(self, wavelength_pts, mat=None, tmax=1000):
         """Plot the TA kinetics at selected wavelengths
-        
+
         Args:
             wavelength_pts (list): The wavelengths to be plotted.
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
             tmax (num, optional): The maximum time to be plotted. Defaults to 1000.
-        
+
         Returns:
             2darray: The kinetics set
         """
@@ -1566,11 +1568,11 @@ class tamatrix_importer:
 
     def return_kinetic(self, wavelength_pt, mat=None):
         """Return the kinetics at a specified wavelength
-        
+
         Args:
             wavelength_pt (float): The wavelength at which to return the kinetics.
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
-            
+
         Returns:
             1darray: The kinetics at the specified wavelength
         """
@@ -1642,8 +1644,7 @@ class tamatrix_importer:
         else:
             y = np.mean(
                 matrix[
-                    wavelength_index
-                    - int(avg_pts / 2) : wavelength_index
+                    wavelength_index - int(avg_pts / 2) : wavelength_index
                     + int(avg_pts / 2),
                     :,
                 ],
@@ -1817,7 +1818,7 @@ class tamatrix_importer:
 
     def fit_correlation(self, num_of_exp):
         """Fit the cross-correlation curve to determine the zero time.
-        
+
         Args:
             num_of_exp (int): The number of exponentials to use in the fitting model.
         """
@@ -1895,7 +1896,7 @@ def find_closest_value(list1, list2):
 # Plot contour from files
 def plot_contour_file(tatime_file, tawavelength_file, tamatrix_file, max_point):
     """Plot a contour plot of the TA matrix from files.
-    
+
     Args:
         tatime_file (str): The file containing the time points of the TA data.
         tawavelength_file (str): The file containing the wavelength points of the TA data.
@@ -1918,7 +1919,7 @@ def plot_contour_file(tatime_file, tawavelength_file, tamatrix_file, max_point):
 # Plot contour with numpy arrays
 def plot_contour(tatime, tawavelength, tamatrix, max_point):
     """Plot a contour plot of the TA matrix.
-    
+
     Args:
         tatime (array-like): The time points of the TA data.
         tawavelength (array-like): The wavelength points of the TA data.
@@ -1979,7 +1980,7 @@ def polyfit(y, x, weights):
 
 def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
     """Multi-exponential function for fitting TA data.
-    
+
     Args:
         t (array-like): Time points.
         w0 (float): Gaussian distribution width for IRF fitting. Use gaussian integral to fit the IRF.
@@ -1995,7 +1996,7 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
         w10 (float): Zero time.
         w11 (float): Pre-zero offset.
         w12 (float): Long-terme offset.
-        
+
     Returns:
         array-like: The fitted data.
     """
@@ -2232,7 +2233,7 @@ def colorwaves(ax):
     Change the colors of the lines in the given Axes object using a predefined color cycle.
     This function applies a custom color scheme to lines in a matplotlib plot,
     skipping lines that have labels starting with "_child".
-    
+
     Args:
         ax (matplotlib.axes.Axes): The Axes object containing the lines to colorize.
     Notes:
