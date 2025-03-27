@@ -1467,7 +1467,7 @@ class tamatrix_importer:
             fig, ax = plt.subplots(figsize=(7, 4))
             for i in range(len(wavelength_index)):
                 spec = matrix[wavelength_index[i], :].T
-                self.kinetics_set = np.append(self.kinetics_set, spec)
+                self.kinetics_set = np.append(self.kinetics_set, spec, axis = 0)
                 ax.plot(
                     self.tatime,
                     spec,
