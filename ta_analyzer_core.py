@@ -765,9 +765,9 @@ class plot_glotaran:
         pts_select_fit = find_closest_value(wavelength_select, self.das[:,0])
         kinect_fit_set = np.array([])
         self.fig_trace_fit, self.ax_trace_fit = plt.subplots()
-        print(kinetics_set)
-        for i in range(len(kinetics_set[:,0])):
-            print(f"{self.wavelength_select[i]} nm")
+        print(kinetics_set.size)
+        for i in range(len(kinetics_set)):
+            print(f"{kinetics_set[i]}")
             kinetic_fit = np.zeros_like(self.traces[:,0])
             for j in range(int(self.das.shape[1] / 2)):
                 print(f"j = {j}")
@@ -775,7 +775,7 @@ class plot_glotaran:
                 print(self.das[pts_select_fit[i],2*j+1])
             kinect_fit_set = np.append(kinect_fit_set, kinetic_fit)
             self.ax_trace_fit.plot(self.traces[:,0], kinetic_fit, label=f"{self.wavelength_select[i]} nm fit")
-            self.ax_trace_fit.plot(self.glotaran_matrix.tatime, kinetics_set[:,i], label=f"{self.wavelength_select[i]} nm kinetics")
+            self.ax_trace_fit.plot(self.glotaran_matrix.tatime, kinetics_set[i], label=f"{self.wavelength_select[i]} nm kinetics")
         
         
         
