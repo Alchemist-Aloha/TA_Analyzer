@@ -757,10 +757,27 @@ class plot_glotaran:
             # Match pattern that ends with _Nexp where N is any number
             base_stem = re.sub(r'_\d+exp$', '', path.stem)
             return path.parent / base_stem
-        
+        self.wavelength_select = wavelength_select
         self.glotaran_matrix_dir = get_base_path(self.filename)
-        self.glotaran_matrix = tamatrix_importer(load_glotaran=load_glotaran(self.glotaran_matrix_dir))
-        kinetics_set = self.glotaran_matrix.auto_takinetics(wavelength_select, tmax=tmax)
+        self.glotaran_matrix = tamatrix_importer(load_glotaran=load_glotaran(self.glotaran_matrix_dir.with_suffix(".ascii")))
+        kinetics_set = self.glotaran_matrix.auto_takinetics(self.wavelength_select, tmax=tmax,plot=False)
+        pts_select_matrix = find_closest_value(wavelength_select, self.glotaran_matrix.tawavelength)
+        pts_select_fit = find_closest_value(wavelength_select, self.das[:,0])
+        kinect_fit_set = np.array([])
+        self.fig_trace_fit, self.ax_trace_fit = plt.subplots()
+        print(kinetics_set)
+        for i in range(len(kinetics_set[:,0])):
+            print(f"{self.wavelength_select[i]} nm")
+            kinetic_fit = np.zeros_like(self.traces[:,0])
+            for j in range(int(self.das.shape[1] / 2)):
+                print(f"j = {j}")
+                kinetic_fit += self.das[pts_select_fit[i],2*j+1]*self.traces[:,2*j+1]
+                print(self.das[pts_select_fit[i],2*j+1])
+            kinect_fit_set = np.append(kinect_fit_set, kinetic_fit)
+            self.ax_trace_fit.plot(self.traces[:,0], kinetic_fit, label=f"{self.wavelength_select[i]} nm fit")
+            self.ax_trace_fit.plot(self.glotaran_matrix.tatime, kinetics_set[:,i], label=f"{self.wavelength_select[i]} nm kinetics")
+        
+        
         
         
 
