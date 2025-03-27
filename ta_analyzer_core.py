@@ -3,6 +3,7 @@ import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+import re
 
 # %matplotlib widget #uncomment for interactive plot
 from matplotlib.colors import ListedColormap
@@ -735,6 +736,33 @@ class plot_glotaran:
                     self.ax_traces.set_ylabel("Amplitude")
         except Exception as e:
             print(f"No trace data found or error in loading trace data: {e}")
+    
+    def plot_trace_fit(self, wavelength_select: tuple[float,...]|list[float], tmax=1000):
+        """Plot the traces with the fitted curve
+
+        Args:
+            wavelength_select (tuple[float,...], optional): The wavelength to be fitted. Defaults to None.
+        """
+        def get_base_path(filepath):
+            """
+            Extract the base path without the variable suffix (like '_5exp')
+            
+            Args:
+                filepath (str or Path): The input filepath like 'dir/xxx_yyy_5exp'
+                
+            Returns:
+                Path: The base path without the variable suffix, like 'dir/xxx_yyy'
+            """
+            path = Path(filepath)
+            # Match pattern that ends with _Nexp where N is any number
+            base_stem = re.sub(r'_\d+exp$', '', path.stem)
+            return path.parent / base_stem
+        
+        self.glotaran_matrix_dir = get_base_path(self.filename)
+        self.glotaran_matrix = tamatrix_importer(load_glotaran=load_glotaran(self.glotaran_matrix_dir))
+        kinetics_set = self.glotaran_matrix.auto_takinetics(wavelength_select, tmax=tmax)
+        
+        
 
 
 class tamatrix_importer:
