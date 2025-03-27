@@ -1473,7 +1473,7 @@ class tamatrix_importer:
         Returns:
             2darray: The kinetics set
         """
-        self.kinetics_set = self.tatime.copy()
+        self.kinetics_set = np.array([])
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
         wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
@@ -1484,7 +1484,7 @@ class tamatrix_importer:
             fig, ax = plt.subplots(figsize=(7, 4))
             for i in range(len(wavelength_index)):
                 spec = matrix[wavelength_index[i], :].T
-                self.kinetics_set = np.c_[self.kinetics_set, spec]
+                self.kinetics_set = np.append(self.kinetics_set, spec)
                 ax.plot(
                     self.tatime,
                     spec,
@@ -1510,7 +1510,7 @@ class tamatrix_importer:
         else:
             for i in range(len(wavelength_index)):
                 spec = matrix[wavelength_index[i], :].T
-                self.kinetics_set = np.c_[self.kinetics_set, spec]
+                self.kinetics_set = np.append(self.kinetics_set, spec)
         return self.kinetics_set
 
     def save_takinetics(self, wavelength_pts, tmax=1000, name=None, mat=None):
