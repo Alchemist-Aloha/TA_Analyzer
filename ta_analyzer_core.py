@@ -1417,7 +1417,7 @@ class tamatrix_importer:
         plt.show()
         return tamatrix[:, index]
 
-    def auto_takinetics(self, wavelength_pts, mat=None, tmax=1000):
+    def auto_takinetics(self, wavelength_pts, mat=None, tmax=1000, plot=True):
         """Plot the TA kinetics at selected wavelengths
 
         Args:
@@ -1435,32 +1435,37 @@ class tamatrix_importer:
         matrix = self.mat_selector(mat)
         # plot spectra together
         # plot spectra together
-        fig, ax = plt.subplots(figsize=(7, 4))
-        for i in range(len(wavelength_index)):
-            spec = matrix[wavelength_index[i], :].T
-            self.kinetics_set = np.c_[self.kinetics_set, spec]
-            ax.plot(
-                self.tatime,
-                spec,
-                label="{:.2f}".format(self.tawavelength[wavelength_index[i]]) + " nm",
-                linewidth=1,
+        if plot:
+            fig, ax = plt.subplots(figsize=(7, 4))
+            for i in range(len(wavelength_index)):
+                spec = matrix[wavelength_index[i], :].T
+                self.kinetics_set = np.c_[self.kinetics_set, spec]
+                ax.plot(
+                    self.tatime,
+                    spec,
+                    label="{:.2f}".format(self.tawavelength[wavelength_index[i]]) + " nm",
+                    linewidth=1,
+                )
+            ax.set_title(self.filestem)
+            plt.rcParams.update(
+                {
+                    "font.size": 8,  # Default font size
+                    "axes.labelsize": 8,  # Label size for x and y axes
+                    "axes.titlesize": 8,  # Title size
+                    "xtick.labelsize": 8,  # Tick label size for x axis
+                    "ytick.labelsize": 8,  # Tick label size for y axis
+                }
             )
-        ax.set_title(self.filestem)
-        plt.rcParams.update(
-            {
-                "font.size": 8,  # Default font size
-                "axes.labelsize": 8,  # Label size for x and y axes
-                "axes.titlesize": 8,  # Title size
-                "xtick.labelsize": 8,  # Tick label size for x axis
-                "ytick.labelsize": 8,  # Tick label size for y axis
-            }
-        )
-        ax.set_xlabel("Time (ps)")
-        ax.set_ylabel("ΔOD")
-        ax.set_xlim(-1, tmax)
-        ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        ax.legend(loc="best")
-        fig.show()
+            ax.set_xlabel("Time (ps)")
+            ax.set_ylabel("ΔOD")
+            ax.set_xlim(-1, tmax)
+            ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
+            ax.legend(loc="best")
+            fig.show()
+        else:
+            for i in range(len(wavelength_index)):
+                spec = matrix[wavelength_index[i], :].T
+                self.kinetics_set = np.c_[self.kinetics_set, spec]
         return self.kinetics_set
 
     def save_takinetics(self, wavelength_pts, tmax=1000, name=None, mat=None):
