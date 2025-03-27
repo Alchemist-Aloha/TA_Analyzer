@@ -1493,7 +1493,7 @@ class tamatrix_importer:
         else:
             for i in range(len(wavelength_index)):
                 spec = matrix[wavelength_index[i], :].T
-                self.kinetics_set = np.append(self.kinetics_set, spec)
+                self.kinetics_set = np.append(self.kinetics_set, spec, axis = 0)
         return self.kinetics_set
 
     def save_takinetics(self, wavelength_pts, tmax=1000, name=None, mat=None):
