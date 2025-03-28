@@ -133,8 +133,9 @@ class load_spectra:
         Use num_spec = 1 instead for single experiment.
     """
 
-    def __init__(self, file_inp, num_spec=None, select=None):
-        self.file_inp = Path(file_inp)
+    def __init__(self, file_name, num_spec, select=None):
+        self.file_name = file_name
+        self.file_inp = Path(self.file_name)
         self.file_inp_stem = self.file_inp.stem
         if select is None and (num_spec is None or num_spec == 1):
             self.num_spec = 1
@@ -186,7 +187,7 @@ class load_spectra:
             self.ax_s.set_title(self.file_inp.stem)
         except Exception as e:
             print(f"Error in loading file using Pathlib: {e}")
-            self.ax_s.set_title(self.file_inp)
+            self.ax_s.set_title(self.file_name)
         self.ax_s.set_xlabel("Wavelength (nm)")
         self.ax_s.set_ylabel("ΔOD")
         return self.spec_1ps
@@ -232,7 +233,7 @@ class load_spectra:
             self.ax_k.set_title(self.file_inp.stem)
         except Exception as e:
             print(f"Error in loading file using Pathlib: {e}")
-            self.ax_k.set_title(self.file_inp)
+            self.ax_k.set_title(self.file_name)
 
         return self.trace_avg
 
@@ -377,7 +378,7 @@ class load_spectra:
             self.tamatrix_avg_burncorr = self.tamatrix_avg.copy()
             self.tamatrix_avg_burncorr[:, 2:] *= burn_correction
             np.savetxt(
-                self.file_inp + "avg_burncorrected",
+                self.file_name + "avg_burncorrected",
                 self.tamatrix_avg_burncorr,
                 fmt="%f",
                 delimiter="\t",
@@ -580,13 +581,9 @@ def batch_load_glotaran(dir="."):
         - If the directory doesn't exist, the function prints "Invalid directory" and returns None.
     """
     try:
-        dir = Path(dir)
+        current_dir = Path(dir)
     except Exception as e:
         print(f"Error in loading directory using Pathlib: {e}")
-    if dir.exists():
-        current_dir = Path(dir)
-    else:
-        print("Invalid directory")
         return
     ascii_files_list = list(current_dir.glob("*.ascii"))
     print(ascii_files_list)
@@ -614,7 +611,7 @@ class plot_glotaran:
         Exception: If there is an error loading the directory with Pathlib.
     """
 
-    def __init__(self, dir, low_threshold=0.07):
+    def __init__(self, dir:str, low_threshold:float=0.07):
         rate_list = []
         error_list = []
         self.filename = dir
@@ -736,50 +733,58 @@ class plot_glotaran:
                     self.ax_traces.set_ylabel("Amplitude")
         except Exception as e:
             print(f"No trace data found or error in loading trace data: {e}")
-    
-    def plot_trace_fit(self, wavelength_select: tuple[float,...]|list[float], tmax=1000):
+
+    def plot_trace_fit(self, wavelength_select: list[float], tmax=1000):
         """Plot the traces with the fitted curve
 
         Args:
-            wavelength_select (tuple[float,...], optional): The wavelength to be fitted. Defaults to None.
+            wavelength_select (list[float]): The wavelength to be fitted..
+            tmax (int, optional): The maximum time for the plot. Defaults to 1000.
         """
-        def get_base_path(filepath):
+
+        def get_base_path(filepath:str|Path) -> Path:
             """
             Extract the base path without the variable suffix (like '_5exp')
-            
+
             Args:
                 filepath (str or Path): The input filepath like 'dir/xxx_yyy_5exp'
-                
+
             Returns:
                 Path: The base path without the variable suffix, like 'dir/xxx_yyy'
             """
             path = Path(filepath)
             # Match pattern that ends with _Nexp where N is any number
-            base_stem = re.sub(r'_\d+exp$', '', path.stem)
+            base_stem = re.sub(r"_\d+exp$", "", path.stem)
             return path.parent / base_stem
+
         self.wavelength_select = wavelength_select
         self.glotaran_matrix_dir = get_base_path(self.filename)
-        self.glotaran_matrix = tamatrix_importer(load_glotaran=load_glotaran(self.glotaran_matrix_dir.with_suffix(".ascii")))
-        kinetics_set = self.glotaran_matrix.auto_takinetics(self.wavelength_select, tmax=tmax,plot=False)
-        pts_select_matrix = find_closest_value(wavelength_select, self.glotaran_matrix.tawavelength)
-        pts_select_fit = find_closest_value(wavelength_select, self.das[:,0])
+        self.glotaran_matrix = tamatrix_importer(
+            load_glotaran=load_glotaran(self.glotaran_matrix_dir.with_suffix(".ascii"))
+        )
+        kinetics_set = self.glotaran_matrix.auto_takinetics(
+            self.wavelength_select, tmax=tmax, plot=False
+        )
+        pts_select_fit = find_closest_value(wavelength_select, self.das[:, 0])
         kinect_fit_set = np.array([])
         self.fig_trace_fit, self.ax_trace_fit = plt.subplots()
-        print(len(kinetics_set))
         for i in range(len(kinetics_set)):
-            print(f"{kinetics_set[i]}")
-            kinetic_fit = np.zeros_like(self.traces[:,0])
+            kinetic_fit = np.zeros_like(self.traces[:, 0])
             for j in range(int(self.das.shape[1] / 2)):
-                print(f"j = {j}")
-                kinetic_fit += self.das[pts_select_fit[i],2*j+1]*self.traces[:,2*j+1]
-                print(self.das[pts_select_fit[i],2*j+1])
+                kinetic_fit += (
+                    self.das[pts_select_fit[i], 2 * j + 1] * self.traces[:, 2 * j + 1]
+                )
             kinect_fit_set = np.append(kinect_fit_set, kinetic_fit)
-            self.ax_trace_fit.plot(self.traces[:,0], kinetic_fit, label=f"{self.wavelength_select[i]} nm fit")
-            self.ax_trace_fit.plot(self.glotaran_matrix.tatime, kinetics_set[i], label=f"{self.wavelength_select[i]} nm kinetics")
-        
-        
-        
-        
+            self.ax_trace_fit.plot(
+                self.traces[:, 0],
+                kinetic_fit,
+                label=f"{self.wavelength_select[i]} nm fit",
+            )
+            self.ax_trace_fit.plot(
+                self.glotaran_matrix.tatime,
+                kinetics_set[i],
+                label=f"{self.wavelength_select[i]} nm kinetics",
+            )
 
 
 class tamatrix_importer:
@@ -802,8 +807,8 @@ class tamatrix_importer:
     def __init__(
         self,
         filename=None,
-        startnm=None,
-        endnm=None,
+        startnm=0,
+        endnm=1200,
         load_spectra=None,
         load_glotaran=None,
         tamatrix=None,
@@ -811,14 +816,8 @@ class tamatrix_importer:
         tawavelength=None,
         name=None,
     ):
-        if startnm is None:
-            self.startnm = 0
-        else:
-            self.startnm = startnm
-        if endnm is None:
-            self.endnm = 1200
-        else:
-            self.endnm = endnm
+        self.startnm = startnm
+        self.endnm = endnm
         # load from file if no object is given
         if filename is not None:
             # Load firstcol wave and find startrow and endrow
@@ -834,6 +833,8 @@ class tamatrix_importer:
                 self.filestem = filename.split(".")[-2]
                 print("Load with filename")
             firstcol = np.loadtxt(self.filename)[:, 1]
+            self.startrow = 0
+            self.endrow = len(firstcol)
             if self.startnm < np.min(firstcol):
                 self.startrow = np.argmin(firstcol)
             else:
@@ -852,8 +853,8 @@ class tamatrix_importer:
             # Load TAwavelength waves
             self.tawavelength = np.loadtxt(
                 self.filename,
-                skiprows=self.startrow,
-                max_rows=self.endrow - self.startrow,
+                skiprows=int(self.startrow),
+                max_rows=int(self.endrow) - int(self.startrow),
             )[:, 1]
             # np.savetxt(self.filename+"_tawavelength",tawavelength,fmt='%1.5f')
 
@@ -866,9 +867,9 @@ class tamatrix_importer:
             # Load TAmatrix waves
             self.tamatrix = np.loadtxt(
                 self.filename,
-                skiprows=self.startrow,
-                max_rows=self.endrow - self.startrow,
-                usecols=np.arange(2, idx + 2),
+                skiprows=int(self.startrow),
+                max_rows=int(self.endrow) - int(self.startrow),
+                usecols=np.arange(2, idx + 2).tolist(),
             )
             # np.savetxt(self.filename+"_tamatrix",self.tamatrix,fmt='%1.5f'
 
@@ -1005,6 +1006,8 @@ class tamatrix_importer:
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
+        if filename is None:
+            filename = self.filestem
         try:
             np.savetxt(
                 self.filename.with_name(filename + "_tatime"), self.tatime, fmt="%1.5f"
@@ -1021,6 +1024,8 @@ class tamatrix_importer:
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
         """
+        if filename is None:
+            filename = self.filestem
         try:
             np.savetxt(
                 self.filename.with_name(filename + "_tawavelength"),
@@ -1062,7 +1067,7 @@ class tamatrix_importer:
             np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
             print(filename + "_tatime has been saved without Pathlib\n")
 
-    def auto_bgcorr(self, points):
+    def auto_bgcorr(self, points:int) -> np.ndarray:
         """Background correction of the TA matrix using the negative time points. The number of time points taken as background should be given as input
 
         Args:
@@ -1076,7 +1081,7 @@ class tamatrix_importer:
         for i in range(points):
             npavg += self.tamatrix[:, i]
 
-        print("The number of time points taken as background: " + str(i + 1))
+        print("The number of time points taken as background: " + str(points))
         npavg /= points
         # np.savetxt(self.filename+"_tamatrix_npavg", npavg, fmt='%1.5f')
         for x in range(self.tamatrix.shape[1]):
@@ -1485,11 +1490,12 @@ class tamatrix_importer:
             for i in range(len(wavelength_index)):
                 spec = matrix[wavelength_index[i], :].T
                 self.kinetics_set.append(spec)
-                    
+
                 ax.plot(
                     self.tatime,
                     spec,
-                    label="{:.2f}".format(self.tawavelength[wavelength_index[i]]) + " nm",
+                    label="{:.2f}".format(self.tawavelength[wavelength_index[i]])
+                    + " nm",
                     linewidth=1,
                 )
             ax.set_title(self.filestem)
@@ -1514,7 +1520,7 @@ class tamatrix_importer:
                 self.kinetics_set.append(spec)
         return self.kinetics_set
 
-    def save_takinetics(self, wavelength_pts, tmax=1000, name=None, mat=None):
+    def save_takinetics(self, wavelength_pts, tmax=1000, name=None, mat=None, plot=True):
         """Plot and Save the TA kinetics at selected wavelengths. Saved file will be named as k_name
 
         Args:
@@ -1530,7 +1536,7 @@ class tamatrix_importer:
         if name is None:
             name = self.filestem
         self.kinetics_set = self.auto_takinetics(
-            self, wavelength_pts=wavelength_pts, mat=mat, tmax=tmax
+            wavelength_pts=wavelength_pts, mat=mat, tmax=tmax, plot=plot
         )
         header_str = "Time(ps)\t"
         try:
@@ -1894,10 +1900,10 @@ class tamatrix_importer:
                     t=t,
                     method="powell",
                     max_nfev=1000000,
-                    nan_policy="omit",
+                nan_policy="omit",
                 )
                 rms = result.chisqr
-                if result.success and rms < 0.15:  # Check if the fit was successful
+                if result.success and rms is not None and rms < 0.15:  # Check if the fit was successful
                     self.t0_list = np.append(
                         self.t0_list,
                         np.array(
@@ -1935,7 +1941,7 @@ def find_closest_value(list1, list2):
     for i in range(len(array1)):
         difference = array2 - array1[i]
         # Use np.abs to get the absolute difference
-        closest[i] = np.argmin(np.abs(difference))
+        closest[i] = int(np.argmin(np.abs(difference)))
     # Remove same elements
     closest_2 = []
     for x in closest:
