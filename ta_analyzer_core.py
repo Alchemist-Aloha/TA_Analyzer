@@ -759,14 +759,18 @@ class plot_glotaran:
 
         self.wavelength_select = wavelength_select
         self.glotaran_matrix_dir = get_base_path(self.filename)
-        self.glotaran_matrix = tamatrix_importer(
-            load_glotaran=load_glotaran(self.glotaran_matrix_dir.with_suffix(".ascii"))
-        )
+        try: 
+            self.glotaran_matrix = tamatrix_importer(
+                load_glotaran=load_glotaran(self.glotaran_matrix_dir.with_suffix(".ascii"))
+            )
+        except FileNotFoundError:
+            print(f"Glotaran matrix file not found: {self.glotaran_matrix_dir}")
+            return
         kinetics_set = self.glotaran_matrix.auto_takinetics(
             self.wavelength_select, tmax=tmax, plot=False
         )
         pts_select_fit = find_closest_value(wavelength_select, self.das[:, 0])
-        kinect_fit_set = np.array([])
+        self.kinect_fit_set = np.array([])
         self.fig_trace_fit, self.ax_trace_fit = plt.subplots()
         for i in range(len(kinetics_set)):
             kinetic_fit = np.zeros_like(self.traces[:, 0])
@@ -774,7 +778,7 @@ class plot_glotaran:
                 kinetic_fit += (
                     self.das[pts_select_fit[i], 2 * j + 1] * self.traces[:, 2 * j + 1]
                 )
-            kinect_fit_set = np.append(kinect_fit_set, kinetic_fit)
+            self.kinect_fit_set = np.append(self.kinect_fit_set, kinetic_fit)
             self.ax_trace_fit.plot(
                 self.traces[:, 0],
                 kinetic_fit,
@@ -785,6 +789,23 @@ class plot_glotaran:
                 kinetics_set[i],
                 label=f"{self.wavelength_select[i]} nm kinetics",
             )
+        self.ax_trace_fit.set_title(self.glotaran_matrix_dir.stem)
+        self.fig_kin_fit, (self.ax_kin_fit1, ax_kin_fit2) = new_split_axes()
+        for i in range(len(kinetics_set)):
+            kinetic_fit = np.zeros_like(self.traces[:, 0])
+            for j in range(int(self.das.shape[1] / 2)):
+                kinetic_fit += (
+                    self.das[pts_select_fit[i], 2 * j + 1] * self.traces[:, 2 * j + 1]
+                )
+            self.kinect_fit_set = np.append(self.kinect_fit_set, kinetic_fit)
+            self.fig_kin_fit, (self.ax_kin_fit1, ax_kin_fit2) = plot_split_axes(self.traces[:, 0],
+                    kinetic_fit, self.fig_kin_fit, (self.ax_kin_fit1, ax_kin_fit2), fit_curve=None, time_split=5, title=None, xlabel="Time (ps)", 
+                    ylabel="ΔOD", label=None, fit_label=None)
+            self.fig_kin_fit, (self.ax_kin_fit1, ax_kin_fit2) = plot_split_axes(self.glotaran_matrix.tatime,
+                kinetics_set[i], self.fig_kin_fit, (self.ax_kin_fit1, ax_kin_fit2), fit_curve=None, time_split=5, title=None, xlabel="Time (ps)", 
+                    ylabel="ΔOD", label=None, fit_label=None)
+        
+        
 
 
 class tamatrix_importer:
@@ -2323,3 +2344,89 @@ def colorwaves(ax):
         ):  # Check if line has a label (and is not default)
             line.set_color(next(color_cycle))  # Assign color and move to next color
     # ax.legend()
+
+def new_split_axes(figsize=(8, 3)):
+    # Create figure with two subplots sharing the y-axis
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, width_ratios=[0.3, 0.7], facecolor="w",figsize=figsize
+    )
+    fig.subplots_adjust(wspace=0.1)
+    return fig, (ax1, ax2)
+    
+def plot_split_axes(x, y, fig , axs_tuple, fit_curve=None, time_split=5, title=None, xlabel="Time (ps)", ylabel="ΔOD", label=None, fit_label=None):
+    """
+    Create a plot with split axes - linear scale for early times and log scale for later times.
+    
+    Args:
+        x (array-like): x-axis data (typically time values)
+        y (array-like): y-axis data (typically signal amplitude)
+        fit_curve (array-like, optional): Fitted curve data if available
+        time_split (float, optional): Time point where to split between linear and log scale. Defaults to 5 ps.
+        title (str, optional): Plot title
+        xlabel (str, optional): x-axis label. Defaults to "Time (ps)".
+        ylabel (str, optional): y-axis label. Defaults to "ΔOD".
+        label (str, optional): Label for the data points
+        fit_label (str, optional): Label for the fit curve
+        figsize (tuple, optional): Figure size (width, height). Defaults to (8, 3).
+        
+    Returns:
+        tuple: Figure and axes objects (fig, (ax1, ax2))
+    """
+    # Find the split point index in the data
+    pt_split = np.searchsorted(x, time_split)
+    ax1 = axs_tuple[0]
+    ax2 = axs_tuple[1]
+    
+    # Plot data points
+    ax1.scatter(x[:pt_split], y[:pt_split], marker="o", color="black", label=label if label else None)
+    ax2.scatter(x[pt_split:], y[pt_split:], marker="o", color="black")
+    
+    # Plot fit curve if provided
+    if fit_curve is not None:
+        ax1.plot(x[:pt_split], fit_curve[:pt_split], color="red", 
+                label=fit_label if fit_label else "Fit")
+        ax2.plot(x[pt_split:], fit_curve[pt_split:], color="red")
+    
+    # Configure the axes
+    ax1.set_xlim(x[0], x[pt_split-1])
+    ax2.set_xlim(x[pt_split-1], x[-1])
+    ax2.set_xscale("log")
+    
+    # Hide the right spine of the first subplot and the left spine of the second subplot
+    ax1.spines["right"].set_visible(False)
+    ax2.spines["left"].set_visible(False)
+    
+    # Configure tick parameters
+    ax1.yaxis.tick_left()
+    ax1.tick_params(labelright=False)
+    ax2.tick_params(axis="y", labelleft=False)
+    ax2.yaxis.tick_right()
+    
+    # Add diagonal break lines to show the discontinuity
+    d = 0.5  # proportion of vertical to horizontal extent of the slanted line
+    kwargs = dict(
+        marker=[(-1, -d), (1, d)],
+        markersize=12,
+        linestyle="none",
+        color="k",
+        mec="k",
+        mew=1,
+        clip_on=False,
+    )
+    ax1.plot([1, 1], [1, 0], transform=ax1.transAxes, **kwargs)
+    ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)
+    
+    # Add horizontal line at y=0
+    ax1.axhline(0, color="black", linewidth=0.5, zorder=0)
+    ax2.axhline(0, color="black", linewidth=0.5, zorder=0)
+    
+    # Add labels and title
+    if title:
+        fig.suptitle(title, fontsize=10, ha="center")
+    fig.text(0.5, 0.04, xlabel, ha="center", fontsize=8)
+    ax1.set_ylabel(ylabel)
+    
+    # Add legend if labels were provided
+    if label or fit_label:
+        ax1.legend(loc="best")
+    
+    return fig, (ax1, ax2)
