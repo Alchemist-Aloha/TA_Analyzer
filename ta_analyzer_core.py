@@ -8,7 +8,6 @@ from scipy.stats import norm
 
 # %matplotlib widget #uncomment for interactive plot
 from matplotlib.colors import ListedColormap
-from scipy.stats import norm
 from tqdm import tqdm
 from itertools import cycle  # Import cycle
 
