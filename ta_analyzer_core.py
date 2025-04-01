@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import re
+from scipy.stats import norm
 
 # %matplotlib widget #uncomment for interactive plot
 from matplotlib.colors import ListedColormap
@@ -601,7 +602,7 @@ def batch_load_glotaran(dir="."):
     return ascii_files_list, glotaran_instance_list, glotaran_instance_dict
 
 
-class plot_glotaran:
+class glotaran_output:
     """Class to plot the Glotaran output file.
     Plot both traces and DASs Files "_traces.ascii", "_DAS.ascii", "_summary.txt"
     Args:
@@ -611,35 +612,51 @@ class plot_glotaran:
         Exception: If there is an error loading the directory with Pathlib.
     """
 
-    def __init__(self, dir: str, low_threshold: float = 0.07):
-        rate_list = []
-        error_list = []
+    def __init__(self, dir: str):
+        self.rate_list = []
+        self.error_list = []
         self.filename = dir
-        rate_list = []
-        error_list = []
+        self.rate_list = []
+        self.error_list = []
         with open(dir + "_summary.txt", "r") as file:
             find_rate = False
             for line in file:
                 stripped_line = line.strip()
                 if stripped_line.startswith("Estimated Kinetic parameters: Dataset1:"):
                     # Split the line by spaces or commas and convert to float
-                    rate_list = [
+                    self.rate_list = [
                         value for value in stripped_line.replace(",", " ").split()
                     ]
                     find_rate = True
                 if find_rate is True and stripped_line.startswith("Standard errors:"):
-                    error_list = [
+                    self.error_list = [
                         value for value in stripped_line.replace(",", " ").split()
                     ]
                     find_rate = False
+                if stripped_line.startswith("Estimated Irf parameters: Dataset1:"):
+                    self.irf_paramters = [
+                        value for value in stripped_line.replace(",", " ").split()
+                    ]
+
         # Convert the list of rate and error to a NumPy array
-        self.rate_array = np.array(rate_list[4:]).astype(float)
-        self.error_array = np.array(error_list[2:]).astype(float)
+        self.irf_parameters_array = np.array(self.irf_paramters[4:]).astype(float)
+        self.irf_offset = self.irf_parameters_array[0]
+        self.irf_width = self.irf_parameters_array[1]
+        self.rate_array = np.array(self.rate_list[4:]).astype(float)
+        self.error_array = np.array(self.error_list[2:]).astype(float)
+
+    def plot_das(
+        self,
+        low_threshold: float = 0.07,
+        save: bool = False,
+        figsize: tuple[int, int] = (6, 3),
+        time_split: int = 1,
+    ) -> None:
         # Load the DAS and traces data
-        self.das = np.loadtxt(dir + "_DAS.ascii", skiprows=1)
-        self.fig_das, self.ax_das = plt.subplots(figsize=(6, 3))
+        self.das = np.loadtxt(self.filename + "_DAS.ascii", skiprows=1)
+        self.fig_das, self.ax_das = plt.subplots(figsize=figsize)
         self.fig_das.subplots_adjust(left=0.2)
-        self.ax_das.set_title(self.filename)
+        self.fig_das.suptitle(self.filename.replace("_"," "), fontsize=10, ha="center")
         if self.das.shape[1] != 2 * self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
@@ -661,26 +678,20 @@ class plot_glotaran:
                 self.ax_das.set_ylabel("DAS")
                 # print(self.das[:,i], self.das[:,i+1])
         self.ax_das.axhline(y=0, c="black", linewidth=0.5, zorder=0)
+        if save:
+            self.fig_das.savefig(self.filename + "_DAS.png", dpi=300)
 
-        # Load the trace data
+        # Load and plot the das trace data
         try:
-            self.traces = np.loadtxt(dir + "_traces.ascii", skiprows=1)
-            self.fig_traces, (self.ax_traces, self.ax_traces_2) = plt.subplots(
-                1,
-                2,
-                width_ratios=[0.3, 0.7],
-                sharey=True,
-                facecolor="w",
-                figsize=(6, 3),
+            self.traces = np.loadtxt(self.filename + "_traces.ascii", skiprows=1)
+            self.fig_traces, (self.ax_traces, self.ax_traces_2) = new_split_axes(
+                figsize=figsize
             )
-            self.fig_traces.subplots_adjust(wspace=0.1)
-            self.ax_traces_2.set_title(self.filename, fontsize=8)
+            self.fig_traces.suptitle(self.filename.replace("_"," "), fontsize=10, ha="center")
             for i in range(int(self.traces.shape[1] / 2)):
                 if 1 / self.rate_array[i] < low_threshold:
                     continue
                 else:
-                    # p = find_closest_value([5],self.traces[:,0])[0]
-                    # time_log = np.concatenate((self.traces[:p,2*i],np.log10(self.traces[p:,2*i])),axis=0)
                     self.ax_traces.plot(
                         self.traces[:, 2 * i],
                         self.traces[:, 2 * i + 1],
@@ -699,8 +710,8 @@ class plot_glotaran:
                             else f"{1 / self.rate_array[i]:.2f} ps"
                         ),
                     )
-                    self.ax_traces.set_xlim(-1, 1)
-                    self.ax_traces_2.set_xlim(1, len(self.traces[:, 2 * i]))
+                    self.ax_traces.set_xlim(-0.5, time_split)
+                    self.ax_traces_2.set_xlim(time_split, self.traces[-1, 2 * i])
                     self.ax_traces.spines["right"].set_visible(False)
                     self.ax_traces_2.spines["left"].set_visible(False)
                     self.ax_traces.yaxis.tick_left()
@@ -725,16 +736,26 @@ class plot_glotaran:
                     )
                     colorwaves(self.ax_traces)
                     colorwaves(self.ax_traces_2)
-                    # self.ax_traces.plot(time_log, self.traces[:,2*i+1], label=f'Trace {1/self.rate_array[i]:.2f} ps')
                     self.ax_traces_2.legend(loc="center right")
                     self.ax_traces_2.set_xscale("log")
                     self.ax_traces_2.set_xlabel("Time (ps)")
                     self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
                     self.ax_traces.set_ylabel("Amplitude")
+                    if save:
+                        self.fig_traces.savefig(
+                            self.filename + "_DAStraces.png", dpi=300, bbox_inches="tight"
+                        )
         except Exception as e:
             print(f"No trace data found or error in loading trace data: {e}")
 
-    def plot_trace_fit(self, wavelength_select: list[float], tmax:int=1000,figsize:tuple[int,int]=(8,4)) -> None:
+    def plot_trace_fit(
+        self,
+        wavelength_select: list[float],
+        tmax: int = 1000,
+        figsize: tuple[int, int] = (8, 4),
+        save: bool = False,
+        time_split: int = 1
+    ) -> None:
         """Plot the traces with the fitted curve
 
         Args:
@@ -774,7 +795,10 @@ class plot_glotaran:
         )
         pts_select_fit = find_closest_value(wavelength_select, self.das[:, 0])
         self.kinect_fit_set = np.array([])
-        self.fig_kin_fit, (self.ax_kin_fit1, self.ax_kin_fit2) = new_split_axes(figsize=figsize)
+        self.cdf = norm.cdf(self.traces[:, 0], loc=0, scale=self.irf_width)
+        self.fig_kin_fit, (self.ax_kin_fit1, self.ax_kin_fit2) = new_split_axes(
+            figsize=figsize
+        )
         for i in range(len(kinetics_set)):
             kinetic_fit = np.zeros_like(self.traces[:, 0])
             for j in range(int(self.das.shape[1] / 2)):
@@ -789,17 +813,26 @@ class plot_glotaran:
                 fit_y=kinetic_fit,
                 fig=self.fig_kin_fit,
                 axs_tuple=(self.ax_kin_fit1, self.ax_kin_fit2),
-                time_split=5,
-                title=None,
+                time_split=time_split,
+                title=f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
                 xlabel="Time (ps)",
                 ylabel="ΔOD",
                 label=f"{self.wavelength_select[i]} nm kinetics",
                 fit_label=f"{self.wavelength_select[i]} nm fit",
-                color_sequence=i
+                color_sequence=i,
             )
-        self.fig_kin_fit.suptitle(f"{self.glotaran_matrix_dir.stem.replace("_"," ")} - Kinetic & Fits", fontsize=10, ha="center")
+        # self.fig_kin_fit.suptitle(
+        #     f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
+        #     fontsize=10,
+        #     ha="center",
+        # )
+        if save:
+            self.fig_kin_fit.savefig(
+                Path(self.filename + "_globalfit_trace").with_suffix(".png"),
+                dpi=300,
+                bbox_inches="tight",
+            )
         plt.plot()
-        
 
 
 class tamatrix_importer:
@@ -2354,19 +2387,19 @@ def new_split_axes(figsize=(8, 3)):
 
 
 def plot_split_axes(
-    x: np.ndarray,
-    y: np.ndarray,
-    fit_x: np.ndarray,
-    fit_y: np.ndarray,
     fig,
     axs_tuple: tuple,
+    x: np.ndarray | None = None,
+    y: np.ndarray | None = None,
+    fit_x: np.ndarray | None = None,
+    fit_y: np.ndarray | None = None,
     time_split=5,
     title=None,
     xlabel="Time (ps)",
     ylabel="ΔOD",
     label=None,
     fit_label=None,
-    color_sequence:int=0,
+    color_sequence: int = 0,
 ):
     """
     Create a plot with split axes - linear scale for early times and log scale for later times.
@@ -2401,30 +2434,40 @@ def plot_split_axes(
     ]
     color = colors[color_sequence % len(colors)]
     # Find the split point index in the data
-    pt_split = np.searchsorted(x, time_split)
-    pt_split_fit = np.searchsorted(fit_x, time_split)
+    if x is not None:
+        pt_split = np.searchsorted(x, time_split)
+    else:
+        pt_split = 0  # Provide a default value for pt_split
+    if fit_x is not None:
+        pt_split_fit = np.searchsorted(fit_x, time_split)
+    else:
+        pt_split_fit = 0  # Provide a default value for pt_split_fit
     ax1 = axs_tuple[0]
     ax2 = axs_tuple[1]
 
-    # Plot data points
-    ax1.scatter(
-        x[:pt_split],
-        y[:pt_split],
-        marker="o",
-        s=50,
-        facecolor="none",
-        edgecolor=color,
-        label=label if label else None,
-    )
-    ax2.scatter(
-        x[pt_split:],
-        y[pt_split:],
-        marker="o",
-        s=50,
-        facecolor="none",
-        color=color,
-        label=label if label else None,
-    )
+    if x is not None and y is not None:
+        # Plot data points
+        ax1.scatter(
+            x[:pt_split],
+            y[:pt_split],
+            marker="o",
+            s=50,
+            facecolor="none",
+            edgecolor=color,
+            label=label if label else None,
+        )
+        ax2.scatter(
+            x[pt_split:],
+            y[pt_split:],
+            marker="o",
+            s=50,
+            facecolor="none",
+            color=color,
+            label=label if label else None,
+        )
+        # Configure the axes
+        ax1.set_xlim(-0.5, time_split)
+        ax2.set_xlim(time_split, x[-1])
 
     # Plot fit curve if provided
     if fit_x is not None and fit_y is not None:
@@ -2435,10 +2478,9 @@ def plot_split_axes(
             label=fit_label if fit_label else "Fit",
         )
         ax2.plot(fit_x[pt_split_fit:], fit_y[pt_split_fit:], color=color)
-
-    # Configure the axes
-    ax1.set_xlim(x[0], x[pt_split - 1])
-    ax2.set_xlim(x[pt_split - 1], x[-1])
+        ax1.set_xlim(-0.5, time_split)
+        ax2.set_xlim(time_split, fit_x[-1])
+    
     ax2.set_xscale("log")
 
     # Hide the right spine of the first subplot and the left spine of the second subplot
@@ -2472,11 +2514,13 @@ def plot_split_axes(
     # Add labels and title
     if title:
         fig.suptitle(title, fontsize=10, ha="center")
-    fig.text(0.5, 0.04, xlabel, ha="center", fontsize=8)
+    # fig.text(0.5, 0.04, xlabel, ha="center", fontsize=8)
+    ax2.set_xlabel(xlabel)
+    ax2.xaxis.set_label_coords(0.2, -0.1)
     ax1.set_ylabel(ylabel)
 
     # Add legend if labels were provided
     if label or fit_label:
-        ax2.legend(loc="best",ncols=1, fontsize=6)
+        ax2.legend(loc="best", ncols=1, fontsize=6)
 
     return fig, (ax1, ax2)
