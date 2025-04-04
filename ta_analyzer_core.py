@@ -622,13 +622,17 @@ class glotaran_output:
                 find_rate = False
                 for line in file:
                     stripped_line = line.strip()
-                    if stripped_line.startswith("Estimated Kinetic parameters: Dataset1:"):
+                    if stripped_line.startswith(
+                        "Estimated Kinetic parameters: Dataset1:"
+                    ):
                         # Split the line by spaces or commas and convert to float
                         self.rate_list = [
                             value for value in stripped_line.replace(",", " ").split()
                         ]
                         find_rate = True
-                    if find_rate is True and stripped_line.startswith("Standard errors:"):
+                    if find_rate is True and stripped_line.startswith(
+                        "Standard errors:"
+                    ):
                         self.error_list = [
                             value for value in stripped_line.replace(",", " ").split()
                         ]
@@ -645,7 +649,7 @@ class glotaran_output:
             self.rate_array = np.array(self.rate_list[4:]).astype(float)
             self.error_array = np.array(self.error_list[2:]).astype(float)
         except Exception as e:
-            
+            print(f"Error in loading file: {e}")
 
     def plot_das(
         self,
@@ -658,7 +662,7 @@ class glotaran_output:
         self.das = np.loadtxt(self.filename + "_DAS.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=figsize)
         self.fig_das.subplots_adjust(left=0.2)
-        self.fig_das.suptitle(self.filename.replace("_"," "), fontsize=10, ha="center")
+        self.fig_das.suptitle(self.filename.replace("_", " "), fontsize=10, ha="center")
         if self.das.shape[1] != 2 * self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
@@ -689,8 +693,16 @@ class glotaran_output:
             self.fig_traces, (self.ax_traces, self.ax_traces_2) = new_split_axes(
                 figsize=figsize
             )
-            self.fig_traces.suptitle(self.filename.replace("_"," "), fontsize=10, ha="center")
+            self.fig_traces.suptitle(
+                self.filename.replace("_", " "), fontsize=10, ha="center"
+            )
             for i in range(int(self.traces.shape[1] / 2)):
+                # Fix bug in Glotaran trace saving.
+                # Only negative irf zerotime offset is saved in the traces file.
+                # Manually add positive zerotime irf offset here
+                if self.irf_offset > 0:
+                    self.traces[:, 2 * i] += self.irf_offset
+                    
                 if 1 / self.rate_array[i] < low_threshold:
                     continue
                 else:
@@ -745,7 +757,9 @@ class glotaran_output:
                     self.ax_traces.set_ylabel("Amplitude")
                     if save:
                         self.fig_traces.savefig(
-                            self.filename + "_DAStraces.png", dpi=300, bbox_inches="tight"
+                            self.filename + "_DAStraces.png",
+                            dpi=300,
+                            bbox_inches="tight",
                         )
         except Exception as e:
             print(f"No trace data found or error in loading trace data: {e}")
@@ -756,7 +770,7 @@ class glotaran_output:
         tmax: int = 1000,
         figsize: tuple[int, int] = (8, 4),
         save: bool = False,
-        time_split: int = 1
+        time_split: int = 1,
     ) -> None:
         """Plot the traces with the fitted curve
 
@@ -2482,7 +2496,7 @@ def plot_split_axes(
         ax2.plot(fit_x[pt_split_fit:], fit_y[pt_split_fit:], color=color)
         ax1.set_xlim(-0.5, time_split)
         ax2.set_xlim(time_split, fit_x[-1])
-    
+
     ax2.set_xscale("log")
 
     # Hide the right spine of the first subplot and the left spine of the second subplot
