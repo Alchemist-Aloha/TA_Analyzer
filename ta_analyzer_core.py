@@ -617,32 +617,35 @@ class glotaran_output:
         self.filename = dir
         self.rate_list = []
         self.error_list = []
-        with open(dir + "_summary.txt", "r") as file:
-            find_rate = False
-            for line in file:
-                stripped_line = line.strip()
-                if stripped_line.startswith("Estimated Kinetic parameters: Dataset1:"):
-                    # Split the line by spaces or commas and convert to float
-                    self.rate_list = [
-                        value for value in stripped_line.replace(",", " ").split()
-                    ]
-                    find_rate = True
-                if find_rate is True and stripped_line.startswith("Standard errors:"):
-                    self.error_list = [
-                        value for value in stripped_line.replace(",", " ").split()
-                    ]
-                    find_rate = False
-                if stripped_line.startswith("Estimated Irf parameters: Dataset1:"):
-                    self.irf_paramters = [
-                        value for value in stripped_line.replace(",", " ").split()
-                    ]
+        try:
+            with open(dir + "_summary.txt", "r") as file:
+                find_rate = False
+                for line in file:
+                    stripped_line = line.strip()
+                    if stripped_line.startswith("Estimated Kinetic parameters: Dataset1:"):
+                        # Split the line by spaces or commas and convert to float
+                        self.rate_list = [
+                            value for value in stripped_line.replace(",", " ").split()
+                        ]
+                        find_rate = True
+                    if find_rate is True and stripped_line.startswith("Standard errors:"):
+                        self.error_list = [
+                            value for value in stripped_line.replace(",", " ").split()
+                        ]
+                        find_rate = False
+                    if stripped_line.startswith("Estimated Irf parameters: Dataset1:"):
+                        self.irf_paramters = [
+                            value for value in stripped_line.replace(",", " ").split()
+                        ]
 
-        # Convert the list of rate and error to a NumPy array
-        self.irf_parameters_array = np.array(self.irf_paramters[4:]).astype(float)
-        self.irf_offset = self.irf_parameters_array[0]
-        self.irf_width = self.irf_parameters_array[1]
-        self.rate_array = np.array(self.rate_list[4:]).astype(float)
-        self.error_array = np.array(self.error_list[2:]).astype(float)
+            # Convert the list of rate and error to a NumPy array
+            self.irf_parameters_array = np.array(self.irf_paramters[4:]).astype(float)
+            self.irf_offset = self.irf_parameters_array[0]
+            self.irf_width = self.irf_parameters_array[1]
+            self.rate_array = np.array(self.rate_list[4:]).astype(float)
+            self.error_array = np.array(self.error_list[2:]).astype(float)
+        except Exception as e:
+            
 
     def plot_das(
         self,
