@@ -1429,7 +1429,7 @@ class tamatrix_importer:
         ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
         ax.set_xlabel("Wavelength (nm)")
         ax.set_ylabel("ΔOD")
-        ax.legend(loc="best")
+        ax.legend(loc="best",ncol=2)
         fig.show()
         return self.spectra_set, time_index
 
