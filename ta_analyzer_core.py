@@ -1,6 +1,7 @@
 from pathlib import Path
 import lmfit
 import matplotlib.pyplot as plt
+from matplotlib import colormaps
 import numpy as np
 import xarray as xr
 import re
@@ -22,21 +23,29 @@ from glotaran.project.scheme import Scheme
 """
 
 
-def mat_avg(name, select):
-    """Average the TAmatrix of multiple experiments
+def mat_avg(name: Path, select: list) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Average the TA matrix of multiple experiments.
 
     Args:
-        name (str): The name of the file to be loaded. e.g. "expt_"
-        select (list): A list of the selected experiments to be loaded. e.g. [0,2,3,5]. Note this will load expt_1, expt_3, expt_4, expt_6.
+        name (Path): The path of the file to be loaded (e.g., "dir/expt_").
+        select (list): A list of indices for the selected experiments to be loaded.
+                       For example, [0, 2, 3, 5] will load files like "expt_1", "expt_3", "expt_4", "expt_6".
 
     Returns:
-        str, str: The averaged matrix, the matrix array with all experiments loaded.
+        tuple[np.ndarray, np.ndarray]: A tuple containing:
+            - The averaged matrix (2D numpy array).
+            - The 3D matrix array with all experiments loaded.
+
+    Notes:
+        - The function attempts to load files using `Path` methods. If it fails, it falls back to string-based file paths.
+        - The averaged matrix is saved as a new file with "averaged" appended to the base name.
     """
     try:
         first_array = np.loadtxt(name.with_name(name.stem + str(select[0] + 1)))
     except Exception as e:
         print(f"Error in loading file using Pathlib: {e}")
-        first_array = np.loadtxt(name + str(select[0] + 1))
+        first_array = np.loadtxt(str(name) + str(select[0] + 1))
     rows, columns = first_array.shape
     mat_array = np.zeros((rows, columns, len(select)))
     for i, x in enumerate(select):
@@ -44,7 +53,7 @@ def mat_avg(name, select):
             mat_array[:, :, i] = np.loadtxt(name.with_name(name.stem + str(x + 1)))
         except Exception as e:
             print(f"Error in loading file using Pathlib: {e}")
-            mat_array[:, :, i] = np.loadtxt(name + str(x + 1))
+            mat_array[:, :, i] = np.loadtxt(str(name) + str(x + 1))
     sum_array = np.sum(mat_array, axis=2)
     avg_array = sum_array / len(select)
     try:
@@ -53,24 +62,24 @@ def mat_avg(name, select):
         )
     except Exception as e:
         print(f"Error in saving file using Pathlib: {e}")
-        np.savetxt(name + "averaged", avg_array, fmt="%f", delimiter="\t")
+        np.savetxt(str(name) + "averaged", avg_array, fmt="%f", delimiter="\t")
     return avg_array, mat_array
 
 
-def load_tatime(mat):
+def load_tatime(mat: np.ndarray) -> np.ndarray:
     """Load the time axis TATime0 of the TA matrix
 
     Args:
-        mat (2darray): The TA matrix as a numpy array
+        mat (np.ndarray): The TA matrix as a numpy array
 
     Returns:
-        1darray: The time axis of the TA matrix
+        np.ndarray: The time axis of the TA matrix
     """
     tatime = mat[: mat.shape[1] - 2, 0]
     return tatime
 
 
-def load_tawavelength(mat):
+def load_tawavelength(mat: np.ndarray) -> np.ndarray:
     """Load the wavelength axis TAWavelength0 of the TA matrix
 
     Args:
@@ -84,13 +93,31 @@ def load_tawavelength(mat):
 
 
 class load_single:
-    """Initialize the class with the file name
+    """
+    Load and process a single TA spectrum file.
 
     Args:
-        file_name (str): The name of the file to be loaded. e.g. "expt_1"
+        file_name (str | Path): The name of the file to be loaded (e.g., "expt_1").
+
+    Attributes:
+        filename (Path): The full path of the file.
+        filestem (str): The stem (name without extension) of the file.
+        tawavelength (np.ndarray): The wavelength axis of the TA spectrum.
+        spec_ta (np.ndarray): The TA spectrum data.
+        spec_on (np.ndarray): The "ON" spectrum data.
+        spec_off (np.ndarray): The "OFF" spectrum data.
+        ax (list | None): Axes for plotting.
+
+    Methods:
+        plot(ylim: tuple[float, float] | None = None) -> None:
+            Plot the TA spectrum along with the ON and OFF spectra.
+
+    Notes:
+        - The class automatically loads and processes the file upon initialization.
+        - The `plot` method provides an option to set y-axis limits for the TA spectrum.
     """
 
-    def __init__(self, file_name):
+    def __init__(self, file_name:str | Path) -> None:
         self.filename = Path(file_name)
         self.filestem = self.filename.stem
         data = np.loadtxt(self.filename)
@@ -100,7 +127,7 @@ class load_single:
         self.spec_off = data[:, 3]
         self.ax = None
 
-    def plot(self, ylim=None):
+    def plot(self, ylim:tuple[float,float]|None=None) -> None:
         """Plot the TA spectrum, ON and OFF spectrum
 
         Args:
@@ -133,7 +160,7 @@ class load_spectra:
         Use num_spec = 1 instead for single experiment.
     """
 
-    def __init__(self, file_name, num_spec, select=None):
+    def __init__(self, file_name:str, num_spec:int, select:list|None=None) -> None:
         self.file_name = file_name
         self.file_inp = Path(self.file_name)
         self.file_inp_stem = self.file_inp.stem
@@ -149,16 +176,19 @@ class load_spectra:
             # load tatime and tawavelength axes
             self.tatime = load_tatime(self.tamatrix_avg)
             self.tawavelength = load_tawavelength(self.tamatrix_avg)
-        else:
+        elif num_spec >= 1:
             self.num_spec = num_spec
             # average the matrix
-            self.select = range(self.num_spec)
+            self.select = list(range(self.num_spec))
             self.tamatrix_avg, self.mat_array = mat_avg(self.file_inp, self.select)
             # load tatime and tawavelength axes
             self.tatime = load_tatime(self.tamatrix_avg)
             self.tawavelength = load_tawavelength(self.tamatrix_avg)
+        else:
+            print("Invalid input. Please check the input parameters")
+            return
 
-    def mat_sub(self, obj_bg, modifier=None):
+    def mat_sub(self, obj_bg:'load_spectra', modifier:float|None=None) -> None:
         """Subtract background from the TA matrix
 
         Args:
@@ -172,7 +202,7 @@ class load_spectra:
             self.mat_array - obj_bg.tamatrix_avg[:, :, np.newaxis] * modifier
         )
 
-    def get_1ps(self):
+    def get_1ps(self) -> np.ndarray:
         """Get the 1ps spectrum and plot it
 
         Returns:
@@ -192,7 +222,7 @@ class load_spectra:
         self.ax_s.set_ylabel("ΔOD")
         return self.spec_1ps
 
-    def get_traces(self, wavelength, disable_plot=None):
+    def get_traces(self, wavelength:float, disable_plot:bool=False) -> np.ndarray:
         """Get the traces at a specific wavelength and plot them
 
         Args:
@@ -239,13 +269,13 @@ class load_spectra:
 
     def fit_kinetic(
         self,
-        wavelength,
-        num_of_exp=None,
-        params=None,
-        time_split=None,
-        w1_vary=None,
-        w12_vary=None,
-    ):
+        wavelength:float,
+        num_of_exp:int|None=None,
+        params:lmfit.Parameters|None=None,
+        time_split:float=5.0,
+        w1_vary:bool=True,
+        w12_vary:bool=True,
+    ) -> lmfit.model.ModelResult:
         """Fit the kinetics at a specific wavelength
 
         Args:
@@ -257,12 +287,8 @@ class load_spectra:
             w12_vary (bool, optional): Vary the w12 parameter. Defaults to None.
 
         Returns:
-            lmfit.ModelResult: The result of the fitting
+            lmfit.model.ModelResult: The result of the fitting
         """
-        if w1_vary is None:
-            w1_vary = True
-        if w12_vary is None:
-            w12_vary = True
         if params is None:
             params = params_init(num_of_exp, w1_vary=w1_vary, w12_vary=w12_vary)
         # plot spectra together
@@ -295,10 +321,8 @@ class load_spectra:
             print(f"{name:7s} {param.value:11.6f} {param.stderr:11.6f}")
         print("-------------------------------")
         # result.plot_fit()
-        if time_split is None:
-            pt_split = find_closest_value([5], self.tatime)[0]
-        else:
-            pt_split = find_closest_value([time_split], self.tatime)[0]
+
+        pt_split = find_closest_value([time_split], self.tatime)[0]
         fig, (ax1, ax2) = plt.subplots(
             1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
         )
@@ -344,7 +368,7 @@ class load_spectra:
         plt.show()
         return result
 
-    def correct_burn(self, wavelength, disable_plot=None):
+    def correct_burn(self, wavelength:float, disable_plot:bool=False) -> None:
         """Correct the sample burning (degredation) according to selected wavelength in the TA matrix. Savethe corrected matrix as a new TA matrix file
 
         Args:
@@ -393,7 +417,7 @@ class compare_traces:
         wavelength (num): wavelength to be compared
     """
 
-    def __init__(self, obj, wavelength):
+    def __init__(self, obj:'load_spectra', wavelength:float) -> None:
         self.wavelength = wavelength
         self.tatime = obj.tatime
         trace = obj.get_traces(wavelength, disable_plot=True).reshape(1, -1)
@@ -404,7 +428,7 @@ class compare_traces:
         self.wavelength_list = [self.wavelength]
         self.name_list = [obj.file_inp]
 
-    def add_trace(self, obj, wavelength=None):
+    def add_trace(self, obj:'load_spectra', wavelength:float|None=None) -> None:
         """add traces from another load_spectra object
 
         Args:
@@ -428,7 +452,7 @@ class compare_traces:
                 return
         self.trace_array = np.append(self.trace_array, trace_toadd, axis=0)
 
-    def plot(self):
+    def plot(self) -> None:
         """plot the loaded traces"""
         self.fig, self.ax = plt.subplots()
         for i in range(len(self.trace_array)):
@@ -702,7 +726,7 @@ class glotaran_output:
                 # Manually add positive zerotime irf offset here
                 if self.irf_offset > 0:
                     self.traces[:, 2 * i] += self.irf_offset
-                    
+
                 if 1 / self.rate_array[i] < low_threshold:
                     continue
                 else:
@@ -1184,6 +1208,7 @@ class tamatrix_importer:
         "TAwavelength" is the name of the wavelength axis, e.g. "tawavelength"
         "zerotime_x" is the wave with the x values of the zerotime wave drawn above, e.g. "W_XPoly0"
         "zerotime_y" is the wave with the y values of the zerotime wave drawn above, e.g. "W_YPoly0"
+
         Note that you could also fit the kinetics at a lot of different wavelengths and thereby determine a series of zerotimes ("zerotime_y")
         at a series of wavelengths ("zerotime_x")
         So you'd call this macro with a command line like: Correct_zerotime("TAmatrix0","TAtime0", "tawavelength","W_XPoly0","W_YPoly0")
@@ -1400,7 +1425,8 @@ class tamatrix_importer:
         matrix = self.mat_selector(mat)
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
-        colors = plt.cm.rainbow(np.linspace(1, 0, len(time_index)))
+        rainbow = colormaps['rainbow']
+        colors = rainbow(np.linspace(1, 0, len(time_index)))
         cmap = ListedColormap(colors)
         self.spectra_set = self.tawavelength.copy()
         fig, ax = plt.subplots(figsize=(6, 3))
@@ -1429,7 +1455,7 @@ class tamatrix_importer:
         ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
         ax.set_xlabel("Wavelength (nm)")
         ax.set_ylabel("ΔOD")
-        ax.legend(loc="best",ncol=2)
+        ax.legend(loc="best", ncol=2)
         fig.show()
         return self.spectra_set, time_index
 
@@ -1876,7 +1902,8 @@ class tamatrix_importer:
                 into linear and logarithmic scales. Defaults to None.
 
         """
-        colors = plt.cm.rainbow(np.linspace(1, 0, len(self.fit_results)))
+        rainbow = colormaps['rainbow']
+        colors = rainbow(np.linspace(1, 0, len(self.fit_results)))
         cmap = ListedColormap(colors)
         fig, (ax1, ax2) = plt.subplots(
             1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
