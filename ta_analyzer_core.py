@@ -1,5 +1,8 @@
 from pathlib import Path
 import lmfit
+import matplotlib
+import matplotlib.axes
+import matplotlib.figure
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 import numpy as np
@@ -767,10 +770,10 @@ class glotaran_output:
                         clip_on=False,
                     )
                     self.ax_traces.plot(
-                        [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs
+                        [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs # type: ignore
                     )
                     self.ax_traces_2.plot(
-                        [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs
+                        [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs # type: ignore
                     )
                     colorwaves(self.ax_traces)
                     colorwaves(self.ax_traces_2)
@@ -2420,8 +2423,16 @@ def colorwaves(ax):
     # ax.legend()
 
 
-def new_split_axes(figsize=(8, 3)):
-    # Create figure with two subplots sharing the y-axis
+def new_split_axes(figsize:tuple[int,int]=(8, 3)) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
+    """Create figure with two subplots sharing the y-axis
+    and a specified width ratio.
+    
+    Args:
+        figsize (tuple, optional): Figure size (width, height). Defaults to (8, 3).
+        
+    Returns:
+        tuple: Figure and axes objects (fig, (ax1, ax2))
+        """
     fig, (ax1, ax2) = plt.subplots(
         1, 2, sharey=True, width_ratios=[0.3, 0.7], facecolor="w", figsize=figsize
     )
@@ -2430,20 +2441,20 @@ def new_split_axes(figsize=(8, 3)):
 
 
 def plot_split_axes(
-    fig,
-    axs_tuple: tuple,
+    fig:matplotlib.figure.Figure,
+    axs_tuple: tuple[matplotlib.axes.Axes, matplotlib.axes.Axes],
     x: np.ndarray | None = None,
     y: np.ndarray | None = None,
     fit_x: np.ndarray | None = None,
     fit_y: np.ndarray | None = None,
-    time_split=5,
-    title=None,
-    xlabel="Time (ps)",
-    ylabel="ΔOD",
-    label=None,
-    fit_label=None,
+    time_split:float=5.,
+    title:str|None=None,
+    xlabel:str="Time (ps)",
+    ylabel:str="ΔOD",
+    label:str|None=None,
+    fit_label:str|None=None,
     color_sequence: int = 0,
-):
+) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
     """
     Create a plot with split axes - linear scale for early times and log scale for later times.
 
@@ -2547,8 +2558,8 @@ def plot_split_axes(
         mew=1,
         clip_on=False,
     )
-    ax1.plot([1, 1], [1, 0], transform=ax1.transAxes, **kwargs)
-    ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)
+    ax1.plot([1, 1], [1, 0], transform=ax1.transAxes, **kwargs) # type: ignore
+    ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs) # type: ignore
 
     # Add horizontal line at y=0
     ax1.axhline(0, color="black", linewidth=0.5, zorder=0)
