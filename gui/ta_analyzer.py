@@ -11,7 +11,7 @@ import pyqtgraph as pg
 from ta_analyzer_ui import (
     Ui_MainWindow,
 )  # Import the generated class from the generated file
-from ta_analyzer_core import *
+from ..ta_analyzer_core import tamatrix_importer  # Add other specific imports as needed
 import numpy as np
 
 
