@@ -6,6 +6,7 @@ import matplotlib.figure
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 import numpy as np
+from numpy._typing._array_like import NDArray
 import xarray as xr
 import re
 from scipy.stats import norm
@@ -120,7 +121,7 @@ class load_single:
         - The `plot` method provides an option to set y-axis limits for the TA spectrum.
     """
 
-    def __init__(self, file_name:str | Path) -> None:
+    def __init__(self, file_name: str | Path) -> None:
         self.filename = Path(file_name)
         self.filestem = self.filename.stem
         data = np.loadtxt(self.filename)
@@ -130,7 +131,7 @@ class load_single:
         self.spec_off = data[:, 3]
         self.ax = None
 
-    def plot(self, ylim:tuple[float,float]|None=None) -> None:
+    def plot(self, ylim: tuple[float, float] | None = None) -> None:
         """Plot the TA spectrum, ON and OFF spectrum
 
         Args:
@@ -163,7 +164,9 @@ class load_spectra:
         Use num_spec = 1 instead for single experiment.
     """
 
-    def __init__(self, file_name:str, num_spec:int, select:list|None=None) -> None:
+    def __init__(
+        self, file_name: str, num_spec: int, select: list | None = None
+    ) -> None:
         self.file_name = file_name
         self.file_inp = Path(self.file_name)
         self.file_inp_stem = self.file_inp.stem
@@ -191,7 +194,7 @@ class load_spectra:
             print("Invalid input. Please check the input parameters")
             return
 
-    def mat_sub(self, obj_bg:'load_spectra', modifier:float|None=None) -> None:
+    def mat_sub(self, obj_bg: "load_spectra", modifier: float | None = None) -> None:
         """Subtract background from the TA matrix
 
         Args:
@@ -225,7 +228,7 @@ class load_spectra:
         self.ax_s.set_ylabel("ΔOD")
         return self.spec_1ps
 
-    def get_traces(self, wavelength:float, disable_plot:bool=False) -> np.ndarray:
+    def get_traces(self, wavelength: float, disable_plot: bool = False) -> np.ndarray:
         """Get the traces at a specific wavelength and plot them
 
         Args:
@@ -272,12 +275,12 @@ class load_spectra:
 
     def fit_kinetic(
         self,
-        wavelength:float,
-        num_of_exp:int|None=None,
-        params:lmfit.Parameters|None=None,
-        time_split:float=5.0,
-        w1_vary:bool=True,
-        w12_vary:bool=True,
+        wavelength: float,
+        num_of_exp: int = 1,
+        params: lmfit.Parameters | None = None,
+        time_split: float = 5.0,
+        w1_vary: bool = True,
+        w12_vary: bool = True,
     ) -> lmfit.model.ModelResult:
         """Fit the kinetics at a specific wavelength
 
@@ -371,7 +374,7 @@ class load_spectra:
         plt.show()
         return result
 
-    def correct_burn(self, wavelength:float, disable_plot:bool=False) -> None:
+    def correct_burn(self, wavelength: float, disable_plot: bool = False) -> None:
         """Correct the sample burning (degredation) according to selected wavelength in the TA matrix. Savethe corrected matrix as a new TA matrix file
 
         Args:
@@ -420,7 +423,7 @@ class compare_traces:
         wavelength (num): wavelength to be compared
     """
 
-    def __init__(self, obj:'load_spectra', wavelength:float) -> None:
+    def __init__(self, obj: "load_spectra", wavelength: float) -> None:
         self.wavelength = wavelength
         self.tatime = obj.tatime
         trace = obj.get_traces(wavelength, disable_plot=True).reshape(1, -1)
@@ -431,7 +434,7 @@ class compare_traces:
         self.wavelength_list = [self.wavelength]
         self.name_list = [obj.file_inp]
 
-    def add_trace(self, obj:'load_spectra', wavelength:float|None=None) -> None:
+    def add_trace(self, obj: "load_spectra", wavelength: float | None = None) -> None:
         """add traces from another load_spectra object
 
         Args:
@@ -481,7 +484,7 @@ class glotaran:
         tawavelength (str): The filename of the wavelength axis
     """
 
-    def __init__(self, matrix_corr, tatime, tawavelength):
+    def __init__(self, matrix_corr:str|Path, tatime:str, tawavelength:str) -> None:
         self.filename = Path(matrix_corr)
         self.filestem = self.filename.stem
         self.tatime = np.loadtxt(tatime)
@@ -516,13 +519,13 @@ class merge_glotaran:
     The output will be saved as filename+"_ir_merged.ascii"
     Maybe write this as a function instead
     Args:
-        glotaran_vis (load_glotaran): The load_glotaran object of the visible region
-        glotaran_ir (load_glotaran): The load_glotaran object of the IR region
+        glotaran_vis (glotaran): The load_glotaran object of the visible region
+        glotaran_ir (glotaran): The load_glotaran object of the IR region
         vis_max (num): The maximum wavelength of the visible region
         ir_min (num): The minimum wavelength of the IR region
     """
 
-    def __init__(self, glotaran_vis, glotaran_ir, vis_max, ir_min):
+    def __init__(self, glotaran_vis:'glotaran', glotaran_ir:'glotaran', vis_max:float, ir_min:float) -> None:
         self.glotaran_vis = glotaran_vis
         self.glotaran_ir = glotaran_ir
         if np.array_equal(self.glotaran_vis.tatime, self.glotaran_ir.tatime):
@@ -553,7 +556,9 @@ class merge_glotaran:
         except Exception as e:
             print(f"Error in merging using Pathlib: {e}")
             np.savetxt(
-                self.glotaran_vis.filename.split(".")[-2] + "_ir_merged.ascii",
+                self.glotaran_vis.filename.with_name(
+                    self.glotaran_vis.filestem + "_ir_merged"
+                ).with_suffix(".ascii"),
                 self.output_matrix,
                 header=self.header,
                 fmt="%s",
@@ -770,10 +775,16 @@ class glotaran_output:
                         clip_on=False,
                     )
                     self.ax_traces.plot(
-                        [1, 1], [1, 0], transform=self.ax_traces.transAxes, **kwargs # type: ignore
+                        [1, 1],
+                        [1, 0],
+                        transform=self.ax_traces.transAxes,
+                        **kwargs,  # type: ignore
                     )
                     self.ax_traces_2.plot(
-                        [0, 0], [0, 1], transform=self.ax_traces_2.transAxes, **kwargs # type: ignore
+                        [0, 0],
+                        [0, 1],
+                        transform=self.ax_traces_2.transAxes,
+                        **kwargs,  # type: ignore
                     )
                     colorwaves(self.ax_traces)
                     colorwaves(self.ax_traces_2)
@@ -1428,7 +1439,7 @@ class tamatrix_importer:
         matrix = self.mat_selector(mat)
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
-        rainbow = colormaps['rainbow']
+        rainbow = colormaps["rainbow"]
         colors = rainbow(np.linspace(1, 0, len(time_index)))
         cmap = ListedColormap(colors)
         self.spectra_set = self.tawavelength.copy()
@@ -1746,7 +1757,7 @@ class tamatrix_importer:
     def fit_kinetic(
         self,
         wavelength,
-        num_of_exp=None,
+        num_of_exp=1,
         mat=None,
         params=None,
         time_split=None,
@@ -1905,7 +1916,7 @@ class tamatrix_importer:
                 into linear and logarithmic scales. Defaults to None.
 
         """
-        rainbow = colormaps['rainbow']
+        rainbow = colormaps["rainbow"]
         colors = rainbow(np.linspace(1, 0, len(self.fit_results)))
         cmap = ListedColormap(colors)
         fig, (ax1, ax2) = plt.subplots(
@@ -1969,7 +1980,7 @@ class tamatrix_importer:
         ax1.set_ylabel("ΔOD")
         plt.show()
 
-    def fit_correlation(self, num_of_exp):
+    def fit_correlation(self, num_of_exp:int) -> None:
         """Fit the cross-correlation curve to determine the zero time.
 
         Args:
@@ -2022,7 +2033,9 @@ class tamatrix_importer:
         plt.show()
 
 
-def find_closest_value(list1, list2):
+def find_closest_value(
+    list1: list[int | float] | np.ndarray, list2: list[int | float] | np.ndarray
+) -> list[int]:
     """Find the closest value in list2 for each element in list1.
     Similar to np.searchsorted but doesn't require sorted array.
 
@@ -2049,7 +2062,9 @@ def find_closest_value(list1, list2):
 
 
 # Plot contour from files
-def plot_contour_file(tatime_file, tawavelength_file, tamatrix_file, max_point):
+def plot_contour_file(
+    tatime_file: str, tawavelength_file: str, tamatrix_file: str, max_point: int
+) -> None:
     """Plot a contour plot of the TA matrix from files.
 
     Args:
@@ -2072,7 +2087,9 @@ def plot_contour_file(tatime_file, tawavelength_file, tamatrix_file, max_point):
 
 
 # Plot contour with numpy arrays
-def plot_contour(tatime, tawavelength, tamatrix, max_point):
+def plot_contour(
+    tatime: np.ndarray, tawavelength: np.ndarray, tamatrix: np.ndarray, max_point: int
+) -> None:
     """Plot a contour plot of the TA matrix.
 
     Args:
@@ -2091,7 +2108,7 @@ def plot_contour(tatime, tawavelength, tamatrix, max_point):
     plt.show()
 
 
-def polynomial_func(x, a, b, c):
+def polynomial_func(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
     """Polynomial function for fitting data.
 
     Args:
@@ -2133,7 +2150,22 @@ def polyfit(y, x, weights):
     return fitted_curve
 
 
-def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
+def multiexp_func(
+    t: np.ndarray,
+    w0: float,
+    w1: float,
+    w2: float,
+    w3: float,
+    w4: float,
+    w5: float,
+    w6: float,
+    w7: float,
+    w8: float,
+    w9: float,
+    w10: float,
+    w11: float,
+    w12: float,
+) -> np.ndarray:
     """Multi-exponential function for fitting TA data.
 
     Args:
@@ -2191,58 +2223,58 @@ def multiexp_func(t, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12):
 
 
 def params_init(
-    num_of_exp,
-    w0_value=0.1,
-    w0_min=0.05,
-    w0_max=0.2,
-    w0_vary=None,
-    w1_value=1.0,
-    w1_vary=False,
-    c1_value=0,
-    c1_min=-0.5,
-    c1_max=0.5,
-    c1_vary=True,
-    t1_value=1,
-    t1_min=0.01,
-    t1_max=5000,
-    t1_vary=True,
-    c2_value=0,
-    c2_min=-0.5,
-    c2_max=0.5,
-    c2_vary=None,
-    t2_value=10,
-    t2_min=0.01,
-    t2_max=5000,
-    t2_vary=None,
-    c3_value=0,
-    c3_min=-0.5,
-    c3_max=0.5,
-    c3_vary=None,
-    t3_value=50,
-    t3_min=0.01,
-    t3_max=5000,
-    t3_vary=None,
-    c4_value=0,
-    c4_min=-0.5,
-    c4_max=0.5,
-    c4_vary=None,
-    t4_value=500,
-    t4_min=0.01,
-    t4_max=5000,
-    t4_vary=None,
-    w10_value=0.0,
-    w10_min=-0.5,
-    w10_max=0.5,
-    w10_vary=True,
-    w11_value=0.0,
-    w11_min=-0.1,
-    w11_max=0.1,
-    w11_vary=True,
-    w12_value=0.0,
-    w12_min=-0.5,
-    w12_max=0.5,
-    w12_vary=None,
-):
+    num_of_exp: int,
+    w0_value: float = 0.1,
+    w0_min: float = 0.05,
+    w0_max: float = 0.2,
+    w0_vary: bool = True,
+    w1_value: float = 1.0,
+    w1_vary: bool = False,
+    c1_value: float = 0,
+    c1_min: float = -0.5,
+    c1_max: float = 0.5,
+    c1_vary: bool = True,
+    t1_value: float = 1,
+    t1_min: float = 0.01,
+    t1_max: float = 5000,
+    t1_vary: bool = True,
+    c2_value: float = 0,
+    c2_min: float = -0.5,
+    c2_max: float = 0.5,
+    c2_vary: bool = True,
+    t2_value: float = 10,
+    t2_min: float = 0.01,
+    t2_max: float = 5000,
+    t2_vary: bool = True,
+    c3_value: float = 0,
+    c3_min: float = -0.5,
+    c3_max: float = 0.5,
+    c3_vary: bool = True,
+    t3_value: float = 50,
+    t3_min: float = 0.01,
+    t3_max: float = 5000,
+    t3_vary: bool = True,
+    c4_value: float = 0,
+    c4_min: float = -0.5,
+    c4_max: float = 0.5,
+    c4_vary: bool = True,
+    t4_value: float = 500,
+    t4_min: float = 0.01,
+    t4_max: float = 5000,
+    t4_vary: bool = True,
+    w10_value: float = 0.0,
+    w10_min: float = -0.5,
+    w10_max: float = 0.5,
+    w10_vary: bool = True,
+    w11_value: float = 0.0,
+    w11_min: float = -0.1,
+    w11_max: float = 0.1,
+    w11_vary: bool = True,
+    w12_value: float = 0.0,
+    w12_min: float = -0.5,
+    w12_max: float = 0.5,
+    w12_vary: bool = False,
+) -> lmfit.Parameters:
     """Initialize parameters for the TA Analyzer.
 
     Args:
@@ -2306,22 +2338,12 @@ def params_init(
           only the parameters needed for the specified number of components.
 
     """
-    if w0_vary is None:
-        w0_vary = True
-
-    if w12_vary is None:
-        w12_vary = False
-
     params = lmfit.Parameters()
     params.add("w0", value=w0_value, min=w0_min, max=w0_max, vary=w0_vary)
     params.add("w1", value=w1_value, vary=w1_vary)
     params.add("w2", value=c1_value, min=c1_min, max=c1_max, vary=c1_vary)
     params.add("w3", value=t1_value, min=t1_min, max=t1_max, vary=t1_vary)
     if num_of_exp == 1:
-        if c2_vary is None:
-            c2_vary = True
-        if t2_vary is None:
-            t2_vary = True
         params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=False)
         params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=False)
         params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=False)
@@ -2330,10 +2352,6 @@ def params_init(
         params.add("w9", value=t4_value, min=t4_min, max=t4_max, vary=False)
 
     if num_of_exp == 2:
-        if c2_vary is None:
-            c2_vary = True
-        if t2_vary is None:
-            t2_vary = True
         params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=c2_vary)
         params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=t2_vary)
         params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=False)
@@ -2342,14 +2360,6 @@ def params_init(
         params.add("w9", value=t4_value, min=t4_min, max=t4_max, vary=False)
 
     if num_of_exp == 3:
-        if c2_vary is None:
-            c2_vary = True
-        if t2_vary is None:
-            t2_vary = True
-        if c3_vary is None:
-            c3_vary = True
-        if t3_vary is None:
-            t3_vary = True
         params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=c2_vary)
         params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=t2_vary)
         params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=c3_vary)
@@ -2358,18 +2368,6 @@ def params_init(
         params.add("w9", value=t4_value, min=t4_min, max=t4_max, vary=False)
 
     if num_of_exp == 4:
-        if c2_vary is None:
-            c2_vary = True
-        if t2_vary is None:
-            t2_vary = True
-        if c3_vary is None:
-            c3_vary = True
-        if t3_vary is None:
-            t3_vary = True
-        if c4_vary is None:
-            c4_vary = True
-        if t4_vary is None:
-            t4_vary = True
         params.add("w4", value=c2_value, min=c2_min, max=c2_max, vary=c2_vary)
         params.add("w5", value=t2_value, min=t2_min, max=t2_max, vary=t2_vary)
         params.add("w6", value=c3_value, min=c3_min, max=c3_max, vary=c3_vary)
@@ -2423,16 +2421,18 @@ def colorwaves(ax):
     # ax.legend()
 
 
-def new_split_axes(figsize:tuple[int,int]=(8, 3)) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
+def new_split_axes(
+    figsize: tuple[int, int] = (8, 3),
+) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
     """Create figure with two subplots sharing the y-axis
     and a specified width ratio.
-    
+
     Args:
         figsize (tuple, optional): Figure size (width, height). Defaults to (8, 3).
-        
+
     Returns:
         tuple: Figure and axes objects (fig, (ax1, ax2))
-        """
+    """
     fig, (ax1, ax2) = plt.subplots(
         1, 2, sharey=True, width_ratios=[0.3, 0.7], facecolor="w", figsize=figsize
     )
@@ -2441,18 +2441,18 @@ def new_split_axes(figsize:tuple[int,int]=(8, 3)) -> tuple[matplotlib.figure.Fig
 
 
 def plot_split_axes(
-    fig:matplotlib.figure.Figure,
+    fig: matplotlib.figure.Figure,
     axs_tuple: tuple[matplotlib.axes.Axes, matplotlib.axes.Axes],
     x: np.ndarray | None = None,
     y: np.ndarray | None = None,
     fit_x: np.ndarray | None = None,
     fit_y: np.ndarray | None = None,
-    time_split:float=5.,
-    title:str|None=None,
-    xlabel:str="Time (ps)",
-    ylabel:str="ΔOD",
-    label:str|None=None,
-    fit_label:str|None=None,
+    time_split: float = 5.0,
+    title: str | None = None,
+    xlabel: str = "Time (ps)",
+    ylabel: str = "ΔOD",
+    label: str | None = None,
+    fit_label: str | None = None,
     color_sequence: int = 0,
 ) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
     """
@@ -2558,8 +2558,8 @@ def plot_split_axes(
         mew=1,
         clip_on=False,
     )
-    ax1.plot([1, 1], [1, 0], transform=ax1.transAxes, **kwargs) # type: ignore
-    ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs) # type: ignore
+    ax1.plot([1, 1], [1, 0], transform=ax1.transAxes, **kwargs)  # type: ignore
+    ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)  # type: ignore
 
     # Add horizontal line at y=0
     ax1.axhline(0, color="black", linewidth=0.5, zorder=0)
