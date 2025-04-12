@@ -25,7 +25,7 @@ from glotaran.io import save_dataset
 from glotaran.io.prepare_dataset import prepare_time_trace_dataset
 from glotaran.project.scheme import Scheme
 """
-
+__docformat__ = "google"
 
 def mat_avg(name: Path, select: list) -> tuple[np.ndarray, np.ndarray]:
     """
