@@ -15,6 +15,8 @@ Jupyter notebook for transient absorption analysis. Import 2d transient absorpti
 # Documentation
 The documentation is available at [https://alchemist-aloha.github.io/TA_Analyzer/](https://alchemist-aloha.github.io/TA_Analyzer/). The documentation is still under construction.
 
+Check ta_analyzer.ipynb for the example usage of the package within Jupyter notebook.
+
 # To do
 1. Better output of the fitting results. Currently copying the result manually is required.
 2. Add optional weight mask to kinetic trace fitting.
