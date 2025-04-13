@@ -29,7 +29,7 @@ __docformat__ = "google"
 
 def mat_avg(name: Path, select: list) -> tuple[np.ndarray, np.ndarray]:
     """
-    Average the TA matrix of multiple experiments.
+    Average the TA matrice of multiple experiments.
 
     Args:
         name (Path): The path of the file to be loaded (e.g., "dir/expt_").
@@ -160,7 +160,7 @@ class load_spectra:
         select (list, optional):  select is a list of the selected experiments to be loaded. e.g. [0,2,3,5]. Defaults to None.
 
     Notes:
-        select will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
+        select [0,2,3,5] will load expt_1, expt_3, expt_4, expt_6. select CANNOT be a one element list.
         Use num_spec = 1 instead for single experiment.
     """
 
