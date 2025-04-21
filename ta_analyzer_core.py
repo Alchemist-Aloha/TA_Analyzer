@@ -6,7 +6,6 @@ import matplotlib.figure
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 import numpy as np
-from numpy._typing._array_like import NDArray
 import xarray as xr
 import re
 from scipy.stats import norm
