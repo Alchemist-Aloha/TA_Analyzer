@@ -4,8 +4,11 @@ This guide will help you get started with basic [Git](https://git-scm.com/) vers
 
 ---
 
-## 1. Basic Git Commands
+## 1. Git Version Control
 
+Follow the steps on [Git](https://git-scm.com/) installation page to install Git on your system.
+
+### Basic Git Commands
 - **Clone the repository:**
 
   ```sh
@@ -46,6 +49,8 @@ This guide will help you get started with basic [Git](https://git-scm.com/) vers
   ```sh
   git fetch
   ```
+
+There is Git built in to VSCode, so you can also use the Source Control tab in the sidebar to manage your repository.
 
 ---
 

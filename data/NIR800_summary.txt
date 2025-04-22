@@ -1,0 +1,17 @@
+Summary
+Number of iterations: 10
+
+# R Call for the TIMP function "initModel": 
+gtaModel1 <- initModel(mod_type = "kin",kinpar = c(0.1,0.01,10.0),irffun = "gaus",irfpar = c(0.0,0.1),positivepar=vector(),fixed = list(clpequ=1:0),seqmod = FALSE)
+
+# R Call for the TIMP function "fitModel": 
+gtaFitResult <- fitModel(data = list(gtaDataset1),modspec = list(gtaModel1),modeldiffs = list(linkclp = list(c(1))),opt = kinopt(iter = 10, nnls = FALSE, stderrclp = TRUE, kinspecerr = TRUE, plot = FALSE), lprogress = TRUE)
+
+Final residual standard error: 0.00108123
+
+
+Estimated Kinetic parameters: Dataset1: 0.184128, 0.00226946, 82.3946
+Standard errors: 0.00152474, 8.50288e-07, 16.6160
+
+Estimated Irf parameters: Dataset1: 0.0702602, 0.0740078
+Standard errors: 0.00233146, 0.000416045

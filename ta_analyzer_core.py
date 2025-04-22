@@ -1029,7 +1029,7 @@ class tamatrix_importer:
         plt.colorbar()
         plt.show()
 
-    def save_all(self, filename=None, mat="tcorr"):
+    def save_all(self, filename=None, mat=None):
         """Save the time axis, wavelength axis and TA matrix. Saved files will be named as filename+"_tatime", filename+"_tawavelength", filename+"_tamatrix"
 
         Args:
@@ -1048,47 +1048,47 @@ class tamatrix_importer:
         # else:
         #     matrix = self.tcorr.copy()
         #     print("Background and Zero time corrected matrix is selected\n")
-        matrix = self.mat_selector(mat)
+        matrix, mat = self.mat_selector(mat)
         if filename is None:
             filename = self.filestem
         try:
             np.savetxt(
                 self.filename.with_name(filename + "_tawavelength"),
                 self.tawavelength,
-                fmt="%1.5f",
+                fmt="%1.5f",delimiter="\t",
             )
             print(filename + "_tawavelength has been saved\n")
         except Exception as e:
             print(f"Error in saving tawavelength with Pathlib: {e}")
-            np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f")
+            np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f", delimiter="\t")
             print(filename + "_tawavelength has been saved without Pathilb\n")
         try:
             np.savetxt(
-                self.filename.with_name(filename + "_tatime"), self.tatime, fmt="%1.5f"
+                self.filename.with_name(filename + "_tatime"), self.tatime, fmt="%1.5f", delimiter="\t"
             )
             print(filename + "_tatime has been saved\n")
         except Exception as e:
             print(f"Error in saving tatime with Pathlib: {e}")
-            np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f")
+            np.savetxt(filename + "_tatime", self.tatime, fmt="%1.5f", delimiter="\t")
             print(filename + "_tatime has been saved without Pathlib\n")
         try:
             np.savetxt(
-                self.filename.with_name(filename + "_" + mat), matrix, fmt="%1.5f"
+                self.filename.with_name(filename + "_" + mat), matrix, delimiter="\t", fmt="%1.5f"
             )
             print(filename + "_tamatrix has been saved\n")
         except Exception as e:
             print(f"Error in saving tamatrix with Pathlib: {e}")
-            np.savetxt(filename + "_" + mat, matrix, fmt="%1.5f")
+            np.savetxt(filename + "_" + mat, matrix, fmt="%1.5f", delimiter="\t")
             print(filename + "_" + mat + "_tamatrix has been saved without Pathlib\n")
 
-    def save_tamatrix(self, mat="tcorr", filename=None):
+    def save_tamatrix(self, mat, filename=None):
         """Save the TA matrix. Saved file will be named as filename+"_tamatrix"
 
         Args:
             filename (str): directory to save the file. e.g. "C:/Users/xxx"
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to tcorr.
         """
-        matrix = self.mat_selector(mat)
+        matrix, mat = self.mat_selector(mat)
         if filename is None:
             filename = self.filestem
         try:
@@ -1237,8 +1237,8 @@ class tamatrix_importer:
         """
 
         # import correction line from drawing script
-        zerotime_x = np.loadtxt(line_file)[:, 0]
-        zerotime_y = np.loadtxt(line_file)[:, 1]
+        self.zerotime_x = np.loadtxt(line_file)[:, 0]
+        self.zerotime_y = np.loadtxt(line_file)[:, 1]
         # generate contempory file and output matrix
         time_temp = self.tatime.copy()
         try:
@@ -1251,7 +1251,7 @@ class tamatrix_importer:
         for i in range(len(self.tawavelength)):
             # Tatime axis minus time offset from the drawn line
             time_temp = self.tatime + np.interp(
-                self.tawavelength[i], zerotime_x, zerotime_y
+                self.tawavelength[i], self.zerotime_x, self.zerotime_y
             )
             # extrapolate TAsignal to match corrected time axis
             self.tcorr[i, :] = np.interp(time_temp, self.tatime, oldmatrix[i, :])
@@ -1314,13 +1314,13 @@ class tamatrix_importer:
 
         return self.tcorr
 
-    def glotaran(self, mat="tcorr"):
+    def glotaran(self, mat=None):
         """Export the background and zerotime corrected TA matrix to Glotaran input format (legacy JAVA version). Saved file will be named as filename+"glo.ascii"
         Don't need this array in pyglotaran.
         Args:
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
         """
-        output_matrix = self.mat_selector(mat)
+        output_matrix, mat = self.mat_selector(mat)
         output_matrix = np.append(self.tatime.reshape(1, -1), output_matrix, axis=0)
         output_matrix = np.append(
             np.append("", self.tawavelength).reshape(1, -1).T, output_matrix, axis=1
@@ -1337,7 +1337,7 @@ class tamatrix_importer:
             delimiter="\t",
         )
 
-    def pyglotaran(self, mat="tcorr"):
+    def pyglotaran(self, mat=None):
         """
         export tcorr matrix to pyglotaran xarray dataset
         e.g.
@@ -1350,7 +1350,8 @@ class tamatrix_importer:
         """
         time_vals = self.tatime
         spectral_vals = self.tawavelength
-        data_vals = self.mat_selector(mat).T
+        matrix, mat = self.mat_selector(mat)
+        data_vals = matrix.T
 
         # Define dimensions and coordinates
         dims = ("time", "spectral")
@@ -1377,12 +1378,15 @@ class tamatrix_importer:
         if mat is None:
             try:
                 matrix = self.tcorr.copy()
+                mat = "tcorr"
             except Exception:
                 try:
                     matrix = self.bgcorr.copy()
+                    mat = "bgcorr"
                     print("Background corrected matrix used")
                 except Exception:
                     matrix = self.tamatrix.copy()
+                    mat = "original"
                     print("Original matrix used")
         elif mat == "original":
             matrix = self.tamatrix.copy()
@@ -1401,7 +1405,7 @@ class tamatrix_importer:
                 except Exception:
                     matrix = self.tamatrix.copy()
                     print("Invalid mat value. Original matrix used")
-        return matrix
+        return matrix, mat
 
     def auto_taspectra(self, time_pts=None, mat=None):
         """Plot the TA spectra at selected time points
@@ -1435,7 +1439,7 @@ class tamatrix_importer:
                 1500,
             ]
 
-        matrix = self.mat_selector(mat)
+        matrix, mat = self.mat_selector(mat)
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
         rainbow = colormaps["rainbow"]
@@ -1519,7 +1523,7 @@ class tamatrix_importer:
         time_pt,
         mat=None,
     ):
-        matrix = self.mat_selector(mat)
+        matrix, mat = self.mat_selector(mat)
         diff = self.tatime.copy() - time_pt
         index = np.argmin(np.abs(diff))
         try:
@@ -1556,7 +1560,7 @@ class tamatrix_importer:
         return matrix[:, index]
 
     def return_spectrum(self, time_pt, mat=None):
-        tamatrix = self.mat_selector(mat)
+        tamatrix, mat = self.mat_selector(mat)
         diff = self.tatime.copy() - time_pt
         index = np.argmin(np.abs(diff))
         plt.plot(
@@ -1585,7 +1589,7 @@ class tamatrix_importer:
         # sample time_pts = [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500]
         # find closest time points
         wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
-        matrix = self.mat_selector(mat)
+        matrix, mat = self.mat_selector(mat)
         # plot spectra together
         # plot spectra together
         if plot:
@@ -1674,7 +1678,7 @@ class tamatrix_importer:
         Returns:
             1darray: The kinetics at the specified wavelength
         """
-        matrix = self.mat_selector(mat)
+        matrix, mat = self.mat_selector(mat)
         # plot spectra together
         diff = np.abs(self.tawavelength - wavelength_pt)
         wavelength_index = np.argmin(np.abs(diff))
@@ -1739,7 +1743,7 @@ class tamatrix_importer:
             1darray: The kinetics at the specified wavelength
         """
         # plot spectra together
-        tamatrix = self.mat_selector(mat)
+        tamatrix, mat = self.mat_selector(mat)
         diff = np.abs(self.tawavelength - wavelength_pt)
         wavelength_index = np.argmin(np.abs(diff))
         plt.plot(
@@ -1794,7 +1798,7 @@ class tamatrix_importer:
         if params is None:
             params = params_init(num_of_exp)
 
-        matrix = self.mat_selector(mat)
+        matrix, mat = self.mat_selector(mat)
 
         # plot spectra together
         # diff = np.abs(self.tawavelength - wavelength)
@@ -2027,8 +2031,9 @@ class tamatrix_importer:
         fit = polyfit(self.t0_list[1], self.t0_list[0], self.t0_list[2])
         self.t0_list[2] = fit
         fig, ax = plt.subplots()
-        ax.plot(self.t0_list[0], self.t0_list[1])
-        ax.plot(self.t0_list[0], self.t0_list[2])
+        ax.plot(self.t0_list[0], self.t0_list[1], label="correction line")
+        ax.plot(self.t0_list[0], self.t0_list[2], label="Fitted correction line")
+        ax.legend()
         plt.show()
 
 
@@ -2087,7 +2092,7 @@ def plot_contour_file(
 
 # Plot contour with numpy arrays
 def plot_contour(
-    tatime: np.ndarray, tawavelength: np.ndarray, tamatrix: np.ndarray, max_point: int
+    tatime: np.ndarray, tawavelength: np.ndarray, tamatrix: np.ndarray, max_point: int = 1500
 ) -> None:
     """Plot a contour plot of the TA matrix.
 
