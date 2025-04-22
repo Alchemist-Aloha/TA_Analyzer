@@ -575,9 +575,9 @@ class load_glotaran:
     """
 
     def __init__(self, dir):
-        self.filename = dir
+        self.filename = Path(dir)
         try:
-            self.filestem = dir.stem
+            self.filestem = self.filename.stem
         except Exception as e:
             print(f"Error in loading Glotaran file using Pathlib: {e}")
             self.filestem = dir.split(".")[-2]
@@ -992,7 +992,7 @@ class tamatrix_importer:
             self.tcorr = load_glotaran.tamatrix
             self.filename = load_glotaran.filename
             try:
-                self.filestem = load_glotaran.filename.stem
+                self.filestem = Path(load_glotaran.filename).stem
             except Exception as e:
                 print(f"Error in loading file using Pathlib: {e}")
                 self.filestem = load_glotaran.filename.split(".")[-2]
@@ -1030,7 +1030,7 @@ class tamatrix_importer:
         plt.show()
 
     def save_all(self, filename=None, mat=None):
-        """Save the time axis, wavelength axis and TA matrix. Saved files will be named as filename+"_tatime", filename+"_tawavelength", filename+"_tamatrix"
+        """Save the time axis, wavelength axis and TA matrix. Saved files will be named as filename+"_tatime", filename+"_tawavelength", filename+"_<matrix type>"
 
         Args:
             filename (str): directory to save the files. e.g. "C:/Users/xxx"
@@ -1314,7 +1314,7 @@ class tamatrix_importer:
 
         return self.tcorr
 
-    def glotaran(self, mat=None):
+    def glotaran(self, mat=None, name =None):
         """Export the background and zerotime corrected TA matrix to Glotaran input format (legacy JAVA version). Saved file will be named as filename+"glo.ascii"
         Don't need this array in pyglotaran.
         Args:
@@ -1328,14 +1328,17 @@ class tamatrix_importer:
         header = (
             self.filestem + "\n\nTime explicit\nintervalnr " + str(len(self.tatime))
         )
+        if name is None:
+            name = f"{str(self.filename)}_{mat}.ascii"
         np.savetxt(
-            self.filename.with_suffix(".ascii"),
+            name,
             output_matrix,
             header=header,
             fmt="%s",
             comments="",
             delimiter="\t",
         )
+        print(f"{name} has been saved\n")
 
     def pyglotaran(self, mat=None):
         """
@@ -1459,7 +1462,7 @@ class tamatrix_importer:
                 linewidth=0.5,
             )
         # plt.ylim(-0.05,0.05)
-        ax.set_title(self.filestem)
+        ax.set_title(self.filestem.replace("_", " "))
         plt.rcParams.update(
             {
                 "font.size": 8,  # Default font size
@@ -1605,7 +1608,7 @@ class tamatrix_importer:
                     + " nm",
                     linewidth=1,
                 )
-            ax.set_title(self.filestem)
+            ax.set_title(self.filestem.replace("_", " "))
             plt.rcParams.update(
                 {
                     "font.size": 8,  # Default font size
