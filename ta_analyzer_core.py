@@ -633,13 +633,22 @@ def batch_load_glotaran(dir="."):
 
 
 class glotaran_output:
-    """Class to plot the Glotaran output file.
-    Plot both traces and DASs Files "_traces.ascii", "_DAS.ascii", "_summary.txt"
+    """Class to plot Glotaran output files, including traces and DAS (Decay Associated Spectra).
+
+    This class provides methods to visualize and analyze Glotaran output files:
+    - Traces: "filename_traces.ascii"
+    - DAS: "filename_DAS.ascii"
+    - Summary: "filename_summary.txt"
+
+    Usage:
+        - Save the DAS as "filename_DAS.ascii", traces as "filename_traces.ascii", and summary as "filename_summary.txt".
+        - For the plot_trace_fit method, ensure the Glotaran input file "filename.ascii" is present.
+
     Args:
-        dir (str): The directory of the file without the extension
-        low_threshold (num, optional): The lower threshold (ps) to remove ultrafast DAS. Defaults to 0.07.
+        dir (str): Path to the file (without extension) for the Glotaran output set.
+        low_threshold (float, optional): Lower threshold (in ps) to filter out ultrafast DAS. Default is 0.07.
     Raises:
-        Exception: If there is an error loading the directory with Pathlib.
+        Exception: If there is an error loading the directory or files.
     """
 
     def __init__(self, dir: str):
