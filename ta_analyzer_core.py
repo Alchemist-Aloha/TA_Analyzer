@@ -26,6 +26,7 @@ from glotaran.project.scheme import Scheme
 """
 __docformat__ = "google"
 
+
 def mat_avg(name: Path, select: list) -> tuple[np.ndarray, np.ndarray]:
     """
     Average the TA matrice of multiple experiments.
@@ -483,7 +484,7 @@ class glotaran:
         tawavelength (str): The filename of the wavelength axis
     """
 
-    def __init__(self, matrix_corr:str|Path, tatime:str, tawavelength:str) -> None:
+    def __init__(self, matrix_corr: str | Path, tatime: str, tawavelength: str) -> None:
         self.filename = Path(matrix_corr)
         self.filestem = self.filename.stem
         self.tatime = np.loadtxt(tatime)
@@ -524,7 +525,13 @@ class merge_glotaran:
         ir_min (num): The minimum wavelength of the IR region
     """
 
-    def __init__(self, glotaran_vis:'glotaran', glotaran_ir:'glotaran', vis_max:float, ir_min:float) -> None:
+    def __init__(
+        self,
+        glotaran_vis: "glotaran",
+        glotaran_ir: "glotaran",
+        vis_max: float,
+        ir_min: float,
+    ) -> None:
         self.glotaran_vis = glotaran_vis
         self.glotaran_ir = glotaran_ir
         if np.array_equal(self.glotaran_vis.tatime, self.glotaran_ir.tatime):
@@ -590,7 +597,13 @@ class load_glotaran:
         self.tamatrix = matrix[1:, 1:]
 
 
-def batch_load_glotaran(dir="."):
+def batch_load_glotaran(
+    dir=".",
+    time_pts=[0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000],
+    xlim=None,
+    ylim=None,
+    figsize=(8,4),
+):
     """Batch load all the Glotaran input files in the directory and process them.
     This function scans the specified directory for .ascii files, loads each file using
     the load_glotaran function, processes them with tamatrix_importer, and automatically
@@ -598,6 +611,12 @@ def batch_load_glotaran(dir="."):
     Args:
         dir (str, optional): The directory path where Glotaran input files (.ascii) are stored.
                             Defaults to the current directory (".").
+        time_pts (list, optional): List of time points (in ps) for extracting spectra.
+                            Defaults to [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].
+        xlim (tuple, optional): x-axis limits for the plot. Defaults to None.
+        ylim (tuple, optional): y-axis limits for the plot. Defaults to None.
+        figsize (tuple, optional): Figure size for the plot. Defaults to (8, 4).
+        
     Returns:
         tuple: A tuple containing three elements:
             - ascii_files_list (list): List of Path objects for all found .ascii files.
@@ -618,7 +637,7 @@ def batch_load_glotaran(dir="."):
         return
     ascii_files_list = list(current_dir.glob("*.ascii"))
     print(ascii_files_list)
-    glotaran_instance_list:list["tamatrix_importer"] = []
+    glotaran_instance_list: list["tamatrix_importer"] = []
     glotaran_instance_dict = {}
     for i, ascii_file in enumerate(ascii_files_list):
         print(i, ascii_file)
@@ -626,7 +645,11 @@ def batch_load_glotaran(dir="."):
             tamatrix_importer(load_glotaran=load_glotaran(ascii_file))
         )
         glotaran_instance_list[i].auto_taspectra(
-            mat="tcorr", time_pts=[0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+            mat="tcorr",
+            time_pts=time_pts,
+            xlim=xlim,
+            ylim=ylim,
+            figsize=figsize,
         )
         glotaran_instance_dict[ascii_files_list[i].stem] = glotaran_instance_list[i]
     return ascii_files_list, glotaran_instance_list, glotaran_instance_dict
@@ -1064,16 +1087,25 @@ class tamatrix_importer:
             np.savetxt(
                 self.filename.with_name(filename + "_tawavelength"),
                 self.tawavelength,
-                fmt="%1.5f",delimiter="\t",
+                fmt="%1.5f",
+                delimiter="\t",
             )
             print(filename + "_tawavelength has been saved\n")
         except Exception as e:
             print(f"Error in saving tawavelength with Pathlib: {e}")
-            np.savetxt(filename + "_tawavelength", self.tawavelength, fmt="%1.5f", delimiter="\t")
+            np.savetxt(
+                filename + "_tawavelength",
+                self.tawavelength,
+                fmt="%1.5f",
+                delimiter="\t",
+            )
             print(filename + "_tawavelength has been saved without Pathilb\n")
         try:
             np.savetxt(
-                self.filename.with_name(filename + "_tatime"), self.tatime, fmt="%1.5f", delimiter="\t"
+                self.filename.with_name(filename + "_tatime"),
+                self.tatime,
+                fmt="%1.5f",
+                delimiter="\t",
             )
             print(filename + "_tatime has been saved\n")
         except Exception as e:
@@ -1082,7 +1114,10 @@ class tamatrix_importer:
             print(filename + "_tatime has been saved without Pathlib\n")
         try:
             np.savetxt(
-                self.filename.with_name(filename + "_" + mat), matrix, delimiter="\t", fmt="%1.5f"
+                self.filename.with_name(filename + "_" + mat),
+                matrix,
+                delimiter="\t",
+                fmt="%1.5f",
             )
             print(filename + "_tamatrix has been saved\n")
         except Exception as e:
@@ -1323,7 +1358,7 @@ class tamatrix_importer:
 
         return self.tcorr
 
-    def glotaran(self, mat=None, name =None):
+    def glotaran(self, mat=None, name=None):
         """Export the background and zerotime corrected TA matrix to Glotaran input format (legacy JAVA version). Saved file will be named as filename+"glo.ascii"
         Don't need this array in pyglotaran.
         Args:
@@ -1419,12 +1454,17 @@ class tamatrix_importer:
                     print("Invalid mat value. Original matrix used")
         return matrix, mat
 
-    def auto_taspectra(self, time_pts=None, mat=None):
+    def auto_taspectra(
+        self, time_pts=None, mat=None, xlim=None, ylim=None, figsize=(6, 3)
+    ):
         """Plot the TA spectra at selected time points
 
         Args:
             time_pts (list, optional): The time points to be plotted. Defaults to [-0.5,-0.2, 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 1500].
             mat (str, optional): The matrix to be saved. Options are 'original', 'bgcorr', 'tcorr'. Defaults to 'tcorr'.
+            xlim (tuple, optional): The x-axis limits. Defaults to None.
+            ylim (tuple, optional): The y-axis limits. Defaults to None.
+            figsize (tuple, optional): The size of the figure. Defaults to (6, 3).
 
         Returns:
             1darray, 1darray: The spectra set, the index of the time points
@@ -1458,7 +1498,7 @@ class tamatrix_importer:
         colors = rainbow(np.linspace(1, 0, len(time_index)))
         cmap = ListedColormap(colors)
         self.spectra_set = self.tawavelength.copy()
-        fig, ax = plt.subplots(figsize=(6, 3))
+        fig, ax = plt.subplots(figsize=figsize)
         # plot spectra together
         for i in range(len(time_index)):
             spec = matrix[:, time_index[i]]
@@ -1484,6 +1524,8 @@ class tamatrix_importer:
         ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
         ax.set_xlabel("Wavelength (nm)")
         ax.set_ylabel("ΔOD")
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
         ax.legend(loc="best", ncol=2)
         fig.show()
         return self.spectra_set, time_index
@@ -1995,7 +2037,7 @@ class tamatrix_importer:
         ax1.set_ylabel("ΔOD")
         plt.show()
 
-    def fit_correlation(self, num_of_exp:int) -> None:
+    def fit_correlation(self, num_of_exp: int) -> None:
         """Fit the cross-correlation curve to determine the zero time.
 
         Args:
@@ -2104,7 +2146,10 @@ def plot_contour_file(
 
 # Plot contour with numpy arrays
 def plot_contour(
-    tatime: np.ndarray, tawavelength: np.ndarray, tamatrix: np.ndarray, max_point: int = 1500
+    tatime: np.ndarray,
+    tawavelength: np.ndarray,
+    tamatrix: np.ndarray,
+    max_point: int = 1500,
 ) -> None:
     """Plot a contour plot of the TA matrix.
 
