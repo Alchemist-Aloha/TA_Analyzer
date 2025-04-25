@@ -618,7 +618,7 @@ def batch_load_glotaran(dir="."):
         return
     ascii_files_list = list(current_dir.glob("*.ascii"))
     print(ascii_files_list)
-    glotaran_instance_list = []
+    glotaran_instance_list:list["tamatrix_importer"] = []
     glotaran_instance_dict = {}
     for i, ascii_file in enumerate(ascii_files_list):
         print(i, ascii_file)
