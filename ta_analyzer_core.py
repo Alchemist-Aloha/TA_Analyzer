@@ -944,9 +944,9 @@ class tamatrix_importer:
         endnm=1200,
         load_spectra=None,
         load_glotaran=None,
-        tamatrix=None,
-        tatime=None,
-        tawavelength=None,
+        tamatrix_dir=None,
+        tatime_dir=None,
+        tawavelength_dir=None,
         name=None,
     ):
         self.startnm = startnm
@@ -1029,11 +1029,17 @@ class tamatrix_importer:
                 print(f"Error in loading file using Pathlib: {e}")
                 self.filestem = load_glotaran.filename.split(".")[-2]
                 print("Load with filename")
-        """ else:
-            self.tawavelength = np.loadtxt(tawavelength)
-            self.tatime = np.loadtxt(tatime)
-            self.tcorr = np.loadtxt(tamatrix)
-            self.filename = tamatrix """
+        elif tamatrix_dir is not None and tatime_dir is not None and tawavelength_dir is not None:
+            self.tawavelength = np.loadtxt(tawavelength_dir)
+            self.tatime = np.loadtxt(tatime_dir)
+            self.tamatrix = np.loadtxt(tamatrix_dir)
+            self.filename = tamatrix_dir.split("/")[-1]
+            try:
+                self.filestem = Path(tamatrix_dir).stem
+            except Exception as e:
+                print(f"Error in loading file using Pathlib: {e}")
+                self.filestem = tamatrix_dir.split(".")[-2]
+                print("Load with filename")
 
         if name is not None:
             self.filestem = name
@@ -2639,3 +2645,85 @@ def plot_split_axes(
         ax2.legend(loc="best", ncols=1, fontsize=6)
 
     return fig, (ax1, ax2)
+
+def load_streak_camera_data(file_path):
+    """ Load streak camera data from a file.
+
+    Parameters:
+    file_path (str): Path to the streak camera data file.   
+    Returns:
+    tuple: A tuple containing:
+        - time (numpy.ndarray): Time data from the streak camera.
+        - wavelength (numpy.ndarray): Wavelength data from the streak camera.   
+        - matrix (numpy.ndarray): Matrix data from the streak camera.
+    """
+    data = np.genfromtxt(file_path, delimiter='\t', skip_header=0)
+    time = data[1:, 0]
+    matrix = data[1:, 1:].T # Transpose to have time as columns and wavelengths as rows
+    wavelength = data[0, 1:]
+    np.savetxt(file_path.replace('.dac', '_time.txt'), time)
+    np.savetxt(file_path.replace('.dac', '_wavelength.txt'), wavelength)
+    np.savetxt(file_path.replace('.dac', '_matrix.txt'), matrix)
+    return time, wavelength, matrix
+
+def gaussian(x, amp, cen, wid):
+    return amp * np.exp(-(x - cen)**2 / (2 * wid**2))
+
+def fit_and_plot_gaussian(time_data, kinetic_data, plot=True):
+    """
+    Perform Gaussian fit on kinetic trace data and optionally plot the results.
+    
+    Parameters:
+    -----------
+    time_data : array-like
+        Time values
+    kinetic_data : array-like
+        Kinetic trace data to fit
+    wavelength : int or float
+        Wavelength of the kinetic trace
+    plot : bool, default=True
+        Whether to plot the results
+        
+    Returns:
+    --------
+    dict
+        Dictionary containing fit results and parameters
+    """
+    # Create Gaussian model
+    gmodel = lmfit.Model(gaussian)
+    params = gmodel.make_params(amp=np.max(kinetic_data), 
+                                cen=time_data[np.argmax(kinetic_data)], 
+                                wid=1.0)
+
+    # Perform the fit
+    result = gmodel.fit(kinetic_data, params, x=time_data)
+
+    # Get parameters
+    amp = result.params['amp'].value
+    cen = result.params['cen'].value
+    wid = result.params['wid'].value
+    
+    # Calculate CDF
+    fit_cdf = norm.cdf(time_data, loc=cen, scale=wid) * amp
+    
+    if plot:
+        # Plot data and fit
+        plt.figure(figsize=(10, 6))
+        plt.plot(time_data, kinetic_data, 'o', label='Data')
+        plt.plot(time_data, result.best_fit, '-', label='Gaussian fit')
+        plt.plot(time_data, fit_cdf, 'g--', label='Gaussian CDF')
+        plt.legend()
+        plt.xlabel('Time (ps)')
+        plt.ylabel('ΔA')
+        plt.title('Gaussian Fit of Kinetic Trace')
+    
+    # Print fit report
+    print(result.fit_report())
+    
+    return {
+        'result': result,
+        'amp': amp,
+        'cen': cen,
+        'wid': wid,
+        'fit_cdf': fit_cdf
+    }
