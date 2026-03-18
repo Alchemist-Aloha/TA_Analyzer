@@ -714,18 +714,30 @@ class glotaran_output:
         except Exception as e:
             print(f"Error in loading file: {e}")
 
+
     def plot_das(
         self,
         low_threshold: float = 0.07,
         save: bool = False,
-        figsize: tuple[int, int] = (6, 3),
-        time_split: int = 1,
+        figsize: tuple[float, float] = (6.4,4.8),
+        fontsize: float = 8,
+        time_split: float = 1,
+        title: str | None = None,
+        xlabel: str | None = None,
+        ylabel: str | None = None,
+        legend_loc: str | None = None,
     ) -> None:
         # Load the DAS and traces data
         self.das = np.loadtxt(self.filename + "_DAS.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=figsize)
         self.fig_das.subplots_adjust(left=0.2)
-        self.fig_das.suptitle(self.filename.replace("_", " "), fontsize=10, ha="center")
+        
+        # Set title
+        if title:
+            self.fig_das.suptitle(title, fontsize=fontsize, ha="center")
+        else:
+            self.fig_das.suptitle(self.filename.replace("_", " "), fontsize=fontsize, ha="center")
+            
         if self.das.shape[1] != 2 * self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
@@ -742,13 +754,27 @@ class glotaran_output:
                     ),
                 )
                 colorwaves(self.ax_das)
-                self.ax_das.legend()
-                self.ax_das.set_xlabel("Wavelength (nm)")
-                self.ax_das.set_ylabel("DAS")
+                self.ax_das.tick_params(axis='both', which='major', labelsize=fontsize)
+                # Set legend location
+                if legend_loc:
+                    self.ax_das.legend(loc=legend_loc, fontsize=fontsize)
+                else:
+                    self.ax_das.legend(fontsize=fontsize)
+
+                # Set x and y labels
+                if xlabel:
+                    self.ax_das.set_xlabel(xlabel, fontsize=fontsize)
+                else:
+                    self.ax_das.set_xlabel("Wavelength (nm)", fontsize=fontsize)
+
+                if ylabel:
+                    self.ax_das.set_ylabel(ylabel, fontsize=fontsize)
+                else:
+                    self.ax_das.set_ylabel("DAS", fontsize=fontsize)
                 # print(self.das[:,i], self.das[:,i+1])
         self.ax_das.axhline(y=0, c="black", linewidth=0.5, zorder=0)
         if save:
-            self.fig_das.savefig(self.filename + "_DAS.png", dpi=300)
+            self.fig_das.savefig(self.filename + "_DAS.svg", dpi=600, bbox_inches="tight", format="svg")
 
         # Load and plot the das trace data
         try:
@@ -756,8 +782,10 @@ class glotaran_output:
             self.fig_traces, (self.ax_traces, self.ax_traces_2) = new_split_axes(
                 figsize=figsize
             )
+            self.ax_traces.tick_params(axis='both', which='major', labelsize=fontsize)
+            self.ax_traces_2.tick_params(axis='both', which='major', labelsize=fontsize)
             self.fig_traces.suptitle(
-                self.filename.replace("_", " "), fontsize=10, ha="center"
+                self.filename.replace("_", " "), fontsize=fontsize, ha="center"
             )
             for i in range(int(self.traces.shape[1] / 2)):
                 # Fix bug in Glotaran trace saving.
@@ -788,7 +816,7 @@ class glotaran_output:
                         ),
                     )
                     self.ax_traces.set_xlim(-0.5, time_split)
-                    self.ax_traces_2.set_xlim(time_split, self.traces[-1, 2 * i])
+                    self.ax_traces_2.set_xlim(time_split+0.01, self.traces[-1, 2 * i])
                     self.ax_traces.spines["right"].set_visible(False)
                     self.ax_traces_2.spines["left"].set_visible(False)
                     self.ax_traces.yaxis.tick_left()
@@ -819,15 +847,16 @@ class glotaran_output:
                     )
                     colorwaves(self.ax_traces)
                     colorwaves(self.ax_traces_2)
-                    self.ax_traces_2.legend(loc="center right")
+                    self.ax_traces_2.legend(loc="best", fontsize=fontsize)
                     self.ax_traces_2.set_xscale("log")
-                    self.ax_traces_2.set_xlabel("Time (ps)")
+                    self.ax_traces_2.set_xlabel("Time (ps)", fontsize=fontsize)
                     self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
-                    self.ax_traces.set_ylabel("Amplitude")
+                    self.ax_traces.set_ylabel("Amplitude", fontsize=fontsize)
                     if save:
                         self.fig_traces.savefig(
-                            self.filename + "_DAStraces.png",
-                            dpi=300,
+                            self.filename + "_DAStraces.svg",
+                            format="svg",
+                            dpi=600,
                             bbox_inches="tight",
                         )
         except Exception as e:
@@ -837,9 +866,10 @@ class glotaran_output:
         self,
         wavelength_select: list[float],
         tmax: int = 1000,
-        figsize: tuple[int, int] = (8, 4),
+        figsize: tuple[float, float] = (6.4, 4.8),
         save: bool = False,
-        time_split: int = 1,
+        time_split: float = 1,
+        fontsize: float = 8,        
     ) -> None:
         """Plot the traces with the fitted curve
 
@@ -905,7 +935,11 @@ class glotaran_output:
                 label=f"{self.wavelength_select[i]} nm kinetics",
                 fit_label=f"{self.wavelength_select[i]} nm fit",
                 color_sequence=i,
+                fontsize=fontsize,
             )
+            self.ax_kin_fit1.tick_params(axis='both', which='major', labelsize=fontsize)
+            self.ax_kin_fit2.tick_params(axis='both', which='major', labelsize=fontsize)
+            self.ax_kin_fit2.legend(loc="best", fontsize=fontsize)
         # self.fig_kin_fit.suptitle(
         #     f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
         #     fontsize=10,
@@ -913,8 +947,9 @@ class glotaran_output:
         # )
         if save:
             self.fig_kin_fit.savefig(
-                Path(self.filename + "_globalfit_trace").with_suffix(".png"),
-                dpi=300,
+                Path(self.filename + "_globalfit_trace").with_suffix(".svg"),
+                format="svg",
+                dpi=600,
                 bbox_inches="tight",
             )
         plt.plot()
@@ -2483,7 +2518,7 @@ def colorwaves(ax):
 
 
 def new_split_axes(
-    figsize: tuple[int, int] = (8, 3),
+    figsize: tuple[float, float] = (8, 3),
 ) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
     """Create figure with two subplots sharing the y-axis
     and a specified width ratio.
@@ -2515,6 +2550,7 @@ def plot_split_axes(
     label: str | None = None,
     fit_label: str | None = None,
     color_sequence: int = 0,
+    fontsize: float = 8,  
 ) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
     """
     Create a plot with split axes - linear scale for early times and log scale for later times.
@@ -2547,6 +2583,7 @@ def plot_split_axes(
         "#CCB974",
         "#64B5CD",
     ]
+
     color = colors[color_sequence % len(colors)]
     # Find the split point index in the data
     if x is not None:
@@ -2566,7 +2603,8 @@ def plot_split_axes(
             x[:pt_split],
             y[:pt_split],
             marker="o",
-            s=50,
+            alpha=0.5,
+            s=20,
             facecolor="none",
             edgecolor=color,
             label=label if label else None,
@@ -2575,14 +2613,15 @@ def plot_split_axes(
             x[pt_split:],
             y[pt_split:],
             marker="o",
-            s=50,
+            alpha=0.5,
+            s=20,
             facecolor="none",
             color=color,
             label=label if label else None,
         )
         # Configure the axes
         ax1.set_xlim(-0.5, time_split)
-        ax2.set_xlim(time_split, x[-1])
+        ax2.set_xlim(time_split+0.01, x[-1])
 
     # Plot fit curve if provided
     if fit_x is not None and fit_y is not None:
@@ -2628,14 +2667,14 @@ def plot_split_axes(
 
     # Add labels and title
     if title:
-        fig.suptitle(title, fontsize=10, ha="center")
+        fig.suptitle(title, fontsize=fontsize, ha="center")
     # fig.text(0.5, 0.04, xlabel, ha="center", fontsize=8)
-    ax2.set_xlabel(xlabel)
+    ax2.set_xlabel(xlabel, fontsize=fontsize)
     ax2.xaxis.set_label_coords(0.2, -0.1)
-    ax1.set_ylabel(ylabel)
+    ax1.set_ylabel(ylabel, fontsize=fontsize)
 
     # Add legend if labels were provided
     if label or fit_label:
-        ax2.legend(loc="best", ncols=1, fontsize=6)
+        ax2.legend(loc="best", fontsize=fontsize)
 
     return fig, (ax1, ax2)
