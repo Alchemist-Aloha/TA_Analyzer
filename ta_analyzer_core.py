@@ -62,7 +62,7 @@ def _apply_jacs_style(fontsize: float = 8) -> None:
     )
 
 
-def _style_axis_for_jacs(ax: matplotlib.axes.Axes, fontsize: float = 8) -> None:
+def _style_axis_for_jacs(ax: matplotlib.axes.Axes, fontsize: float = 8, legend: bool = True) -> None:
     """Apply consistent tick and spine formatting to a matplotlib axis."""
     ax.tick_params(
         axis="both",
@@ -74,6 +74,8 @@ def _style_axis_for_jacs(ax: matplotlib.axes.Axes, fontsize: float = 8) -> None:
     ax.tick_params(axis="both", which="minor", width=JACS_LINE_WIDTH, length=1.5)
     for spine in ax.spines.values():
         spine.set_linewidth(JACS_LINE_WIDTH)
+    if legend:
+        ax.legend(frameon=False, fontsize=max(fontsize - 3, 5))
 
 
 def mat_avg(name: Path, select: list) -> tuple[np.ndarray, np.ndarray]:
@@ -907,13 +909,13 @@ class glotaran_output:
                     )
                     colorwaves(self.ax_traces)
                     colorwaves(self.ax_traces_2)
-                    _style_axis_for_jacs(self.ax_traces, fontsize=fontsize)
-                    _style_axis_for_jacs(self.ax_traces_2, fontsize=fontsize)
-                    self.ax_traces_2.legend(loc="best", fontsize=fontsize, frameon=False)
+                    self.ax_traces_2.legend(loc="best", frameon=False)
                     self.ax_traces_2.set_xscale("log")
-                    self.ax_traces_2.set_xlabel("Time (ps)", fontsize=fontsize)
+                    self.ax_traces_2.set_xlabel("Time (ps)")
                     self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
-                    self.ax_traces.set_ylabel("Amplitude", fontsize=fontsize)
+                    self.ax_traces.set_ylabel("Amplitude")
+                    _style_axis_for_jacs(self.ax_traces, fontsize=fontsize, legend=False)
+                    _style_axis_for_jacs(self.ax_traces_2, fontsize=fontsize)
                     if save:
                         self.fig_traces.savefig(
                             self.filename + "_DAStraces.svg",
@@ -995,7 +997,7 @@ class glotaran_output:
                 title=f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
                 xlabel="Time (ps)",
                 ylabel="ΔOD",
-                label=f"{self.wavelength_select[i]} nm kinetics",
+                label=f"{self.wavelength_select[i]} nm",
                 fit_label=f"{self.wavelength_select[i]} nm fit",
                 color_sequence=i,
                 fontsize=fontsize,
