@@ -53,7 +53,7 @@ def _apply_jacs_style(fontsize: float = 8) -> None:
             "xtick.minor.size": 1.5,
             "ytick.minor.size": 1.5,
             "legend.frameon": False,
-            "legend.fontsize": max(fontsize - 1, 6),
+            "legend.fontsize": max(fontsize - 2, 5),
             "figure.dpi": 300,
             "savefig.dpi": 1200,
             "savefig.bbox": "tight",
@@ -75,7 +75,7 @@ def _style_axis_for_jacs(ax: matplotlib.axes.Axes, fontsize: float = 8, legend: 
     for spine in ax.spines.values():
         spine.set_linewidth(JACS_LINE_WIDTH)
     if legend:
-        ax.legend(frameon=False, fontsize=max(fontsize - 3, 5))
+        ax.legend(frameon=False, fontsize=max(fontsize - 2, 5))
 
 
 def mat_avg(name: Path, select: list) -> tuple[np.ndarray, np.ndarray]:
@@ -912,7 +912,7 @@ class glotaran_output:
                     self.ax_traces_2.legend(loc="best", frameon=False)
                     self.ax_traces_2.set_xscale("log")
                     self.ax_traces_2.set_xlabel("Time (ps)")
-                    self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
+                    self.ax_traces_2.xaxis.set_label_coords(0.2, -0.15)
                     self.ax_traces.set_ylabel("Amplitude")
                     _style_axis_for_jacs(self.ax_traces, fontsize=fontsize, legend=False)
                     _style_axis_for_jacs(self.ax_traces_2, fontsize=fontsize)
@@ -1004,9 +1004,10 @@ class glotaran_output:
             )
             self.ax_kin_fit1.tick_params(axis="both", which="major", labelsize=fontsize)
             self.ax_kin_fit2.tick_params(axis="both", which="major", labelsize=fontsize)
-            _style_axis_for_jacs(self.ax_kin_fit1, fontsize=fontsize)
-            _style_axis_for_jacs(self.ax_kin_fit2, fontsize=fontsize)
             self.ax_kin_fit2.legend(loc="best", fontsize=fontsize, frameon=False)
+            _style_axis_for_jacs(self.ax_kin_fit1, fontsize=fontsize, legend=False)
+            _style_axis_for_jacs(self.ax_kin_fit2, fontsize=fontsize)
+
         # self.fig_kin_fit.suptitle(
         #     f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
         #     fontsize=10,
@@ -2727,7 +2728,7 @@ def plot_split_axes(
         )
         ax2.plot(fit_x[pt_split_fit:], fit_y[pt_split_fit:], color=color, linewidth=1.0)
         ax1.set_xlim(-0.5, time_split)
-        ax2.set_xlim(time_split, fit_x[-1])
+        ax2.set_xlim(time_split +0.01, fit_x[-1])
 
     ax2.set_xscale("log")
 
@@ -2764,15 +2765,14 @@ def plot_split_axes(
         fig.suptitle(title, fontsize=fontsize, ha="center")
     # fig.text(0.5, 0.04, xlabel, ha="center", fontsize=8)
     ax2.set_xlabel(xlabel, fontsize=fontsize)
-    ax2.xaxis.set_label_coords(0.2, -0.1)
+    ax2.xaxis.set_label_coords(0.2, -0.15)  # Adjust the position of the x-axis label
     ax1.set_ylabel(ylabel, fontsize=fontsize)
-    _style_axis_for_jacs(ax1, fontsize=fontsize)
-    _style_axis_for_jacs(ax2, fontsize=fontsize)
 
     # Add legend if labels were provided
     if label or fit_label:
         ax2.legend(loc="best", fontsize=fontsize, frameon=False)
-
+    _style_axis_for_jacs(ax1, fontsize=fontsize, legend=False)
+    _style_axis_for_jacs(ax2, fontsize=fontsize)
     return fig, (ax1, ax2)
 
 
