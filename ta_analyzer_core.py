@@ -598,11 +598,15 @@ class load_glotaran:
 
 
 def batch_load_glotaran(
-    dir=".",
-    time_pts=[0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000],
-    xlim=None,
-    ylim=None,
-    figsize=(8,4),
+    dir: Path | str = Path("."),
+    time_pts: list[float] = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000],
+    figsize: tuple[float, float] = (6.4, 4.8),
+    save: bool = False,
+    fontsize: float = 8,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
+) -> (
+    tuple[list[Path], list["tamatrix_importer"], dict[str, "tamatrix_importer"]] | None
 ):
     """Batch load all the Glotaran input files in the directory and process them.
     This function scans the specified directory for .ascii files, loads each file using
@@ -616,7 +620,7 @@ def batch_load_glotaran(
         xlim (tuple, optional): x-axis limits for the plot. Defaults to None.
         ylim (tuple, optional): y-axis limits for the plot. Defaults to None.
         figsize (tuple, optional): Figure size for the plot. Defaults to (8, 4).
-        
+
     Returns:
         tuple: A tuple containing three elements:
             - ascii_files_list (list): List of Path objects for all found .ascii files.
@@ -650,6 +654,8 @@ def batch_load_glotaran(
             xlim=xlim,
             ylim=ylim,
             figsize=figsize,
+            fontsize=fontsize,
+            save=save,
         )
         glotaran_instance_dict[ascii_files_list[i].stem] = glotaran_instance_list[i]
     return ascii_files_list, glotaran_instance_list, glotaran_instance_dict
@@ -714,12 +720,11 @@ class glotaran_output:
         except Exception as e:
             print(f"Error in loading file: {e}")
 
-
     def plot_das(
         self,
         low_threshold: float = 0.07,
         save: bool = False,
-        figsize: tuple[float, float] = (6.4,4.8),
+        figsize: tuple[float, float] = (6.4, 4.8),
         fontsize: float = 8,
         time_split: float = 1,
         title: str | None = None,
@@ -731,13 +736,15 @@ class glotaran_output:
         self.das = np.loadtxt(self.filename + "_DAS.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=figsize)
         self.fig_das.subplots_adjust(left=0.2)
-        
+
         # Set title
         if title:
             self.fig_das.suptitle(title, fontsize=fontsize, ha="center")
         else:
-            self.fig_das.suptitle(self.filename.replace("_", " "), fontsize=fontsize, ha="center")
-            
+            self.fig_das.suptitle(
+                self.filename.replace("_", " "), fontsize=fontsize, ha="center"
+            )
+
         if self.das.shape[1] != 2 * self.rate_array.shape[0]:
             print("das and rate array size mismatch")
         for i in range(int(self.das.shape[1] / 2)):
@@ -754,7 +761,7 @@ class glotaran_output:
                     ),
                 )
                 colorwaves(self.ax_das)
-                self.ax_das.tick_params(axis='both', which='major', labelsize=fontsize)
+                self.ax_das.tick_params(axis="both", which="major", labelsize=fontsize)
                 # Set legend location
                 if legend_loc:
                     self.ax_das.legend(loc=legend_loc, fontsize=fontsize)
@@ -774,7 +781,9 @@ class glotaran_output:
                 # print(self.das[:,i], self.das[:,i+1])
         self.ax_das.axhline(y=0, c="black", linewidth=0.5, zorder=0)
         if save:
-            self.fig_das.savefig(self.filename + "_DAS.svg", dpi=600, bbox_inches="tight", format="svg")
+            self.fig_das.savefig(
+                self.filename + "_DAS.svg", dpi=600, bbox_inches="tight", format="svg"
+            )
 
         # Load and plot the das trace data
         try:
@@ -782,8 +791,8 @@ class glotaran_output:
             self.fig_traces, (self.ax_traces, self.ax_traces_2) = new_split_axes(
                 figsize=figsize
             )
-            self.ax_traces.tick_params(axis='both', which='major', labelsize=fontsize)
-            self.ax_traces_2.tick_params(axis='both', which='major', labelsize=fontsize)
+            self.ax_traces.tick_params(axis="both", which="major", labelsize=fontsize)
+            self.ax_traces_2.tick_params(axis="both", which="major", labelsize=fontsize)
             self.fig_traces.suptitle(
                 self.filename.replace("_", " "), fontsize=fontsize, ha="center"
             )
@@ -816,7 +825,7 @@ class glotaran_output:
                         ),
                     )
                     self.ax_traces.set_xlim(-0.5, time_split)
-                    self.ax_traces_2.set_xlim(time_split+0.01, self.traces[-1, 2 * i])
+                    self.ax_traces_2.set_xlim(time_split + 0.01, self.traces[-1, 2 * i])
                     self.ax_traces.spines["right"].set_visible(False)
                     self.ax_traces_2.spines["left"].set_visible(False)
                     self.ax_traces.yaxis.tick_left()
@@ -869,7 +878,7 @@ class glotaran_output:
         figsize: tuple[float, float] = (6.4, 4.8),
         save: bool = False,
         time_split: float = 1,
-        fontsize: float = 8,        
+        fontsize: float = 8,
     ) -> None:
         """Plot the traces with the fitted curve
 
@@ -937,8 +946,8 @@ class glotaran_output:
                 color_sequence=i,
                 fontsize=fontsize,
             )
-            self.ax_kin_fit1.tick_params(axis='both', which='major', labelsize=fontsize)
-            self.ax_kin_fit2.tick_params(axis='both', which='major', labelsize=fontsize)
+            self.ax_kin_fit1.tick_params(axis="both", which="major", labelsize=fontsize)
+            self.ax_kin_fit2.tick_params(axis="both", which="major", labelsize=fontsize)
             self.ax_kin_fit2.legend(loc="best", fontsize=fontsize)
         # self.fig_kin_fit.suptitle(
         #     f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
@@ -1064,7 +1073,11 @@ class tamatrix_importer:
                 print(f"Error in loading file using Pathlib: {e}")
                 self.filestem = load_glotaran.filename.split(".")[-2]
                 print("Load with filename")
-        elif tamatrix_dir is not None and tatime_dir is not None and tawavelength_dir is not None:
+        elif (
+            tamatrix_dir is not None
+            and tatime_dir is not None
+            and tawavelength_dir is not None
+        ):
             self.tawavelength = np.loadtxt(tawavelength_dir)
             self.tatime = np.loadtxt(tatime_dir)
             self.tamatrix = np.loadtxt(tamatrix_dir)
@@ -1496,7 +1509,14 @@ class tamatrix_importer:
         return matrix, mat
 
     def auto_taspectra(
-        self, time_pts=None, mat=None, xlim=None, ylim=None, figsize=(6, 3)
+        self,
+        time_pts=None,
+        mat=None,
+        xlim=None,
+        ylim=None,
+        figsize=(6.4, 4.8),
+        save=False,
+        fontsize=8,
     ):
         """Plot the TA spectra at selected time points
 
@@ -1506,6 +1526,8 @@ class tamatrix_importer:
             xlim (tuple, optional): The x-axis limits. Defaults to None.
             ylim (tuple, optional): The y-axis limits. Defaults to None.
             figsize (tuple, optional): The size of the figure. Defaults to (6, 3).
+            save (bool, optional): Whether to save the figure. Defaults to False.
+            fontsize (int, optional): The font size. Defaults to 8.
 
         Returns:
             1darray, 1darray: The spectra set, the index of the time points
@@ -1555,19 +1577,27 @@ class tamatrix_importer:
         ax.set_title(self.filestem.replace("_", " "))
         plt.rcParams.update(
             {
-                "font.size": 8,  # Default font size
-                "axes.labelsize": 8,  # Label size for x and y axes
-                "axes.titlesize": 8,  # Title size
-                "xtick.labelsize": 8,  # Tick label size for x axis
-                "ytick.labelsize": 8,  # Tick label size for y axis
+                "font.size": fontsize,  # Default font size
+                "axes.labelsize": fontsize,  # Label size for x and y axes
+                "axes.titlesize": fontsize,  # Title size
+                "xtick.labelsize": fontsize,  # Tick label size for x axis
+                "ytick.labelsize": fontsize,  # Tick label size for y axis
             }
         )
         ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        ax.set_xlabel("Wavelength (nm)")
-        ax.set_ylabel("ΔOD")
+        ax.set_xlabel("Wavelength (nm)", fontsize=fontsize)
+        ax.set_ylabel("ΔOD", fontsize=fontsize)
         ax.set_xlim(xlim)
+        ax.relim()
+        ax.autoscale_view(scalex=False, scaley=True)
         ax.set_ylim(ylim)
-        ax.legend(loc="best", ncol=2)
+        ax.legend(loc="best", ncol=2, fontsize=fontsize)
+        if save:
+            fig.savefig(
+                self.filename.with_name("s_" + self.filestem).with_suffix(".svg"),
+                format="svg",
+                bbox_inches="tight",
+            )
         fig.show()
         return self.spectra_set, time_index
 
@@ -2556,7 +2586,7 @@ def plot_split_axes(
     label: str | None = None,
     fit_label: str | None = None,
     color_sequence: int = 0,
-    fontsize: float = 8,  
+    fontsize: float = 8,
 ) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
     """
     Create a plot with split axes - linear scale for early times and log scale for later times.
@@ -2627,7 +2657,7 @@ def plot_split_axes(
         )
         # Configure the axes
         ax1.set_xlim(-0.5, time_split)
-        ax2.set_xlim(time_split+0.01, x[-1])
+        ax2.set_xlim(time_split + 0.01, x[-1])
 
     # Plot fit curve if provided
     if fit_x is not None and fit_y is not None:
@@ -2685,33 +2715,36 @@ def plot_split_axes(
 
     return fig, (ax1, ax2)
 
+
 def load_streak_camera_data(file_path):
-    """ Load streak camera data from a file.
+    """Load streak camera data from a file.
 
     Parameters:
-    file_path (str): Path to the streak camera data file.   
+    file_path (str): Path to the streak camera data file.
     Returns:
     tuple: A tuple containing:
         - time (numpy.ndarray): Time data from the streak camera.
-        - wavelength (numpy.ndarray): Wavelength data from the streak camera.   
+        - wavelength (numpy.ndarray): Wavelength data from the streak camera.
         - matrix (numpy.ndarray): Matrix data from the streak camera.
     """
-    data = np.genfromtxt(file_path, delimiter='\t', skip_header=0)
+    data = np.genfromtxt(file_path, delimiter="\t", skip_header=0)
     time = data[1:, 0]
-    matrix = data[1:, 1:].T # Transpose to have time as columns and wavelengths as rows
+    matrix = data[1:, 1:].T  # Transpose to have time as columns and wavelengths as rows
     wavelength = data[0, 1:]
-    np.savetxt(file_path.replace('.dac', '_time.txt'), time)
-    np.savetxt(file_path.replace('.dac', '_wavelength.txt'), wavelength)
-    np.savetxt(file_path.replace('.dac', '_matrix.txt'), matrix)
+    np.savetxt(file_path.replace(".dac", "_time.txt"), time)
+    np.savetxt(file_path.replace(".dac", "_wavelength.txt"), wavelength)
+    np.savetxt(file_path.replace(".dac", "_matrix.txt"), matrix)
     return time, wavelength, matrix
 
+
 def gaussian(x, amp, cen, wid):
-    return amp * np.exp(-(x - cen)**2 / (2 * wid**2))
+    return amp * np.exp(-((x - cen) ** 2) / (2 * wid**2))
+
 
 def fit_and_plot_gaussian(time_data, kinetic_data, plot=True):
     """
     Perform Gaussian fit on kinetic trace data and optionally plot the results.
-    
+
     Parameters:
     -----------
     time_data : array-like
@@ -2722,7 +2755,7 @@ def fit_and_plot_gaussian(time_data, kinetic_data, plot=True):
         Wavelength of the kinetic trace
     plot : bool, default=True
         Whether to plot the results
-        
+
     Returns:
     --------
     dict
@@ -2730,39 +2763,33 @@ def fit_and_plot_gaussian(time_data, kinetic_data, plot=True):
     """
     # Create Gaussian model
     gmodel = lmfit.Model(gaussian)
-    params = gmodel.make_params(amp=np.max(kinetic_data), 
-                                cen=time_data[np.argmax(kinetic_data)], 
-                                wid=1.0)
+    params = gmodel.make_params(
+        amp=np.max(kinetic_data), cen=time_data[np.argmax(kinetic_data)], wid=1.0
+    )
 
     # Perform the fit
     result = gmodel.fit(kinetic_data, params, x=time_data)
 
     # Get parameters
-    amp = result.params['amp'].value
-    cen = result.params['cen'].value
-    wid = result.params['wid'].value
-    
+    amp = result.params["amp"].value
+    cen = result.params["cen"].value
+    wid = result.params["wid"].value
+
     # Calculate CDF
     fit_cdf = norm.cdf(time_data, loc=cen, scale=wid) * amp
-    
+
     if plot:
         # Plot data and fit
         plt.figure(figsize=(10, 6))
-        plt.plot(time_data, kinetic_data, 'o', label='Data')
-        plt.plot(time_data, result.best_fit, '-', label='Gaussian fit')
-        plt.plot(time_data, fit_cdf, 'g--', label='Gaussian CDF')
+        plt.plot(time_data, kinetic_data, "o", label="Data")
+        plt.plot(time_data, result.best_fit, "-", label="Gaussian fit")
+        plt.plot(time_data, fit_cdf, "g--", label="Gaussian CDF")
         plt.legend()
-        plt.xlabel('Time (ps)')
-        plt.ylabel('ΔA')
-        plt.title('Gaussian Fit of Kinetic Trace')
-    
+        plt.xlabel("Time (ps)")
+        plt.ylabel("ΔA")
+        plt.title("Gaussian Fit of Kinetic Trace")
+
     # Print fit report
     print(result.fit_report())
-    
-    return {
-        'result': result,
-        'amp': amp,
-        'cen': cen,
-        'wid': wid,
-        'fit_cdf': fit_cdf
-    }
+
+    return {"result": result, "amp": amp, "cen": cen, "wid": wid, "fit_cdf": fit_cdf}
