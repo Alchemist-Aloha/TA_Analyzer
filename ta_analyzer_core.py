@@ -27,6 +27,55 @@ from glotaran.project.scheme import Scheme
 __docformat__ = "google"
 
 
+JACS_SINGLE_COLUMN_WIDTH_IN = 3.25
+JACS_DOUBLE_COLUMN_WIDTH_IN = 7.0
+JACS_LINE_WIDTH = 0.8
+
+
+def _apply_jacs_style(fontsize: float = 8) -> None:
+    """Apply journal-friendly matplotlib defaults for publication figures."""
+    plt.rcParams.update(
+        {
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
+            "font.size": fontsize,
+            "axes.labelsize": fontsize,
+            "axes.titlesize": fontsize,
+            "axes.linewidth": JACS_LINE_WIDTH,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "xtick.major.width": JACS_LINE_WIDTH,
+            "ytick.major.width": JACS_LINE_WIDTH,
+            "xtick.minor.width": JACS_LINE_WIDTH,
+            "ytick.minor.width": JACS_LINE_WIDTH,
+            "xtick.major.size": 3.0,
+            "ytick.major.size": 3.0,
+            "xtick.minor.size": 1.5,
+            "ytick.minor.size": 1.5,
+            "legend.frameon": False,
+            "legend.fontsize": max(fontsize - 1, 6),
+            "figure.dpi": 300,
+            "savefig.dpi": 1200,
+            "savefig.bbox": "tight",
+            "savefig.pad_inches": 0.02,
+        }
+    )
+
+
+def _style_axis_for_jacs(ax: matplotlib.axes.Axes, fontsize: float = 8) -> None:
+    """Apply consistent tick and spine formatting to a matplotlib axis."""
+    ax.tick_params(
+        axis="both",
+        which="major",
+        labelsize=fontsize,
+        width=JACS_LINE_WIDTH,
+        length=3.0,
+    )
+    ax.tick_params(axis="both", which="minor", width=JACS_LINE_WIDTH, length=1.5)
+    for spine in ax.spines.values():
+        spine.set_linewidth(JACS_LINE_WIDTH)
+
+
 def mat_avg(name: Path, select: list) -> tuple[np.ndarray, np.ndarray]:
     """
     Average the TA matrice of multiple experiments.
@@ -732,6 +781,7 @@ class glotaran_output:
         ylabel: str | None = None,
         legend_loc: str | None = None,
     ) -> None:
+        _apply_jacs_style(fontsize=fontsize)
         # Load the DAS and traces data
         self.das = np.loadtxt(self.filename + "_DAS.ascii", skiprows=1)
         self.fig_das, self.ax_das = plt.subplots(figsize=figsize)
@@ -779,10 +829,11 @@ class glotaran_output:
                 else:
                     self.ax_das.set_ylabel("DAS", fontsize=fontsize)
                 # print(self.das[:,i], self.das[:,i+1])
-        self.ax_das.axhline(y=0, c="black", linewidth=0.5, zorder=0)
+        self.ax_das.axhline(y=0, c="black", linewidth=JACS_LINE_WIDTH, zorder=0)
+        _style_axis_for_jacs(self.ax_das, fontsize=fontsize)
         if save:
             self.fig_das.savefig(
-                self.filename + "_DAS.svg", dpi=600, bbox_inches="tight", format="svg"
+                self.filename + "_DAS.svg", dpi=1200, bbox_inches="tight", format="svg"
             )
 
         # Load and plot the das trace data
@@ -856,7 +907,9 @@ class glotaran_output:
                     )
                     colorwaves(self.ax_traces)
                     colorwaves(self.ax_traces_2)
-                    self.ax_traces_2.legend(loc="best", fontsize=fontsize)
+                    _style_axis_for_jacs(self.ax_traces, fontsize=fontsize)
+                    _style_axis_for_jacs(self.ax_traces_2, fontsize=fontsize)
+                    self.ax_traces_2.legend(loc="best", fontsize=fontsize, frameon=False)
                     self.ax_traces_2.set_xscale("log")
                     self.ax_traces_2.set_xlabel("Time (ps)", fontsize=fontsize)
                     self.ax_traces_2.xaxis.set_label_coords(0.2, -0.1)
@@ -865,7 +918,7 @@ class glotaran_output:
                         self.fig_traces.savefig(
                             self.filename + "_DAStraces.svg",
                             format="svg",
-                            dpi=600,
+                            dpi=1200,
                             bbox_inches="tight",
                         )
         except Exception as e:
@@ -903,6 +956,7 @@ class glotaran_output:
             base_stem = re.sub(r"_\d+exp$", "", path.stem)
             return path.parent / base_stem
 
+        _apply_jacs_style(fontsize=fontsize)
         self.wavelength_select = wavelength_select
         self.glotaran_matrix_dir = get_base_path(self.filename)
         try:
@@ -948,7 +1002,9 @@ class glotaran_output:
             )
             self.ax_kin_fit1.tick_params(axis="both", which="major", labelsize=fontsize)
             self.ax_kin_fit2.tick_params(axis="both", which="major", labelsize=fontsize)
-            self.ax_kin_fit2.legend(loc="best", fontsize=fontsize)
+            _style_axis_for_jacs(self.ax_kin_fit1, fontsize=fontsize)
+            _style_axis_for_jacs(self.ax_kin_fit2, fontsize=fontsize)
+            self.ax_kin_fit2.legend(loc="best", fontsize=fontsize, frameon=False)
         # self.fig_kin_fit.suptitle(
         #     f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
         #     fontsize=10,
@@ -958,7 +1014,7 @@ class glotaran_output:
             self.fig_kin_fit.savefig(
                 Path(self.filename + "_globalfit_trace").with_suffix(".svg"),
                 format="svg",
-                dpi=600,
+                dpi=1200,
                 bbox_inches="tight",
             )
         plt.plot()
@@ -1516,7 +1572,7 @@ class tamatrix_importer:
         ylim=None,
         figsize=(6.4, 4.8),
         save=False,
-        fontsize=8,
+        fontsize: float = 8,
     ):
         """Plot the TA spectra at selected time points
 
@@ -1555,6 +1611,7 @@ class tamatrix_importer:
             ]
 
         matrix, mat = self.mat_selector(mat)
+        _apply_jacs_style(fontsize=fontsize)
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
         rainbow = colormaps["rainbow"]
@@ -1571,31 +1628,24 @@ class tamatrix_importer:
                 spec,
                 label="{:.2f}".format(self.tatime[time_index[i]]) + " ps",
                 color=cmap(i),
-                linewidth=0.5,
+                linewidth=1.0,
             )
         # plt.ylim(-0.05,0.05)
-        ax.set_title(self.filestem.replace("_", " "))
-        plt.rcParams.update(
-            {
-                "font.size": fontsize,  # Default font size
-                "axes.labelsize": fontsize,  # Label size for x and y axes
-                "axes.titlesize": fontsize,  # Title size
-                "xtick.labelsize": fontsize,  # Tick label size for x axis
-                "ytick.labelsize": fontsize,  # Tick label size for y axis
-            }
-        )
-        ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax.set_title(self.filestem.replace("_", " "), fontsize=fontsize)
+        _style_axis_for_jacs(ax, fontsize=fontsize)
+        ax.axhline(0, color="black", linestyle="-", linewidth=JACS_LINE_WIDTH)
         ax.set_xlabel("Wavelength (nm)", fontsize=fontsize)
         ax.set_ylabel("ΔOD", fontsize=fontsize)
         ax.set_xlim(xlim)
         ax.relim()
         ax.autoscale_view(scalex=False, scaley=True)
         ax.set_ylim(ylim)
-        ax.legend(loc="best", ncol=2, fontsize=fontsize)
+        ax.legend(loc="best", ncol=2, fontsize=max(fontsize - 1, 6), frameon=False)
         if save:
             fig.savefig(
                 self.filename.with_name("s_" + self.filestem).with_suffix(".svg"),
                 format="svg",
+                dpi=1200,
                 bbox_inches="tight",
             )
         fig.show()
@@ -1715,10 +1765,11 @@ class tamatrix_importer:
         # find closest time points
         wavelength_index = find_closest_value(wavelength_pts, self.tawavelength)
         matrix, mat = self.mat_selector(mat)
+        _apply_jacs_style(fontsize=8)
         # plot spectra together
         # plot spectra together
         if plot:
-            fig, ax = plt.subplots(figsize=(7, 4))
+            fig, ax = plt.subplots(figsize=(JACS_SINGLE_COLUMN_WIDTH_IN, 2.5))
             for i in range(len(wavelength_index)):
                 spec = matrix[wavelength_index[i], :].T
                 self.kinetics_set.append(spec)
@@ -1728,23 +1779,15 @@ class tamatrix_importer:
                     spec,
                     label="{:.2f}".format(self.tawavelength[wavelength_index[i]])
                     + " nm",
-                    linewidth=1,
+                    linewidth=1.0,
                 )
-            ax.set_title(self.filestem.replace("_", " "))
-            plt.rcParams.update(
-                {
-                    "font.size": 8,  # Default font size
-                    "axes.labelsize": 8,  # Label size for x and y axes
-                    "axes.titlesize": 8,  # Title size
-                    "xtick.labelsize": 8,  # Tick label size for x axis
-                    "ytick.labelsize": 8,  # Tick label size for y axis
-                }
-            )
+            ax.set_title(self.filestem.replace("_", " "), fontsize=8)
+            _style_axis_for_jacs(ax, fontsize=8)
             ax.set_xlabel("Time (ps)")
             ax.set_ylabel("ΔOD")
             ax.set_xlim(-1, tmax)
-            ax.axhline(0, color="black", linestyle="-", linewidth=0.5)
-            ax.legend(loc="best")
+            ax.axhline(0, color="black", linestyle="-", linewidth=JACS_LINE_WIDTH)
+            ax.legend(loc="best", frameon=False)
             fig.show()
         else:
             for i in range(len(wavelength_index)):
@@ -1991,13 +2034,15 @@ class tamatrix_importer:
         else:
             pt_split = find_closest_value([time_split], self.tatime)[0]
 
+        _apply_jacs_style(fontsize=8)
+
         fig, (ax1, ax2) = plt.subplots(
             1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
         )
         fig.subplots_adjust(wspace=0.05)
 
-        ax1.scatter(t[:pt_split], y[:pt_split], marker="o", color="black")
-        ax1.plot(t[:pt_split], result.best_fit[:pt_split], color="red")
+        ax1.scatter(t[:pt_split], y[:pt_split], marker="o", s=18, color="black")
+        ax1.plot(t[:pt_split], result.best_fit[:pt_split], color="red", linewidth=1.0)
         ax1.set_xlim(t[0], t[pt_split - 1])
         ax1.spines["right"].set_visible(False)
         ax1.tick_params(right=False)
@@ -2006,6 +2051,7 @@ class tamatrix_importer:
             t[pt_split:],
             y[pt_split:],
             marker="o",
+            s=18,
             color="black",
             label=f"{self.tawavelength[wavelength_index]:.2f} nm",
         )
@@ -2013,6 +2059,7 @@ class tamatrix_importer:
             t[pt_split:],
             result.best_fit[pt_split:],
             color="red",
+            linewidth=1.0,
             label=f"{self.tawavelength[wavelength_index]:.2f} nm fit",
         )
         ax2.set_xscale("log")
@@ -2024,12 +2071,14 @@ class tamatrix_importer:
         gap = 0.1
         ax1.spines["right"].set_position(("outward", gap))
         ax2.spines["left"].set_position(("outward", gap))
-        ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax1.axhline(0, color="black", linestyle="-", linewidth=JACS_LINE_WIDTH)
+        ax2.axhline(0, color="black", linestyle="-", linewidth=JACS_LINE_WIDTH)
+        _style_axis_for_jacs(ax1, fontsize=8)
+        _style_axis_for_jacs(ax2, fontsize=8)
 
         # Centered title above subplots
-        fig.suptitle(self.filestem, fontsize=10, ha="center")
-        plt.legend(loc="best")
+        fig.suptitle(self.filestem, fontsize=8, ha="center")
+        plt.legend(loc="best", frameon=False)
         fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
         plt.show()
@@ -2047,6 +2096,7 @@ class tamatrix_importer:
         rainbow = colormaps["rainbow"]
         colors = rainbow(np.linspace(1, 0, len(self.fit_results)))
         cmap = ListedColormap(colors)
+        _apply_jacs_style(fontsize=8)
         fig, (ax1, ax2) = plt.subplots(
             1, 2, sharey=True, gridspec_kw={"width_ratios": [2, 3]}
         )
@@ -2063,10 +2113,10 @@ class tamatrix_importer:
                 value[0][:pt_split],
                 facecolor="none",
                 marker="o",
-                s=50,
+                s=24,
                 edgecolor=cmap(i),
             )
-            ax1.plot(self.tatime[:pt_split], value[1][:pt_split], color=cmap(i))
+            ax1.plot(self.tatime[:pt_split], value[1][:pt_split], color=cmap(i), linewidth=1.0)
 
             # ax2.scatter(self.tatime,value[0], facecolor='none',marker = 'o',s = 50, edgecolor =cmap(i))
             # ax2.plot(self.tatime,value[1], color =cmap(i), label = f"{key} nm")
@@ -2075,13 +2125,14 @@ class tamatrix_importer:
                 value[0][pt_split:],
                 facecolor="none",
                 marker="o",
-                s=50,
+                s=24,
                 edgecolor=cmap(i),
             )
             ax2.plot(
                 self.tatime[pt_split:],
                 value[1][pt_split:],
                 color=cmap(i),
+                linewidth=1.0,
                 label=f"{key} nm",
             )
             ax2.set_xscale("log")
@@ -2099,11 +2150,13 @@ class tamatrix_importer:
         gap = 0.1
         ax1.spines["right"].set_position(("outward", gap))
         ax2.spines["left"].set_position(("outward", gap))
-        ax1.axhline(0, color="black", linestyle="-", linewidth=0.5)
-        ax2.axhline(0, color="black", linestyle="-", linewidth=0.5)
+        ax1.axhline(0, color="black", linestyle="-", linewidth=JACS_LINE_WIDTH)
+        ax2.axhline(0, color="black", linestyle="-", linewidth=JACS_LINE_WIDTH)
+        _style_axis_for_jacs(ax1, fontsize=8)
+        _style_axis_for_jacs(ax2, fontsize=8)
         # Centered title above subplots
-        fig.suptitle(self.filestem, fontsize=10, ha="center")
-        plt.legend(loc="best")
+        fig.suptitle(self.filestem, fontsize=8, ha="center")
+        plt.legend(loc="best", frameon=False)
         fig.text(0.5, 0.04, "Time (ps)", ha="center", fontsize=8)
         ax1.set_ylabel("ΔOD")
         plt.show()
@@ -2554,7 +2607,7 @@ def colorwaves(ax):
 
 
 def new_split_axes(
-    figsize: tuple[float, float] = (8, 3),
+    figsize: tuple[float, float] = (JACS_SINGLE_COLUMN_WIDTH_IN, 2.5),
 ) -> tuple[matplotlib.figure.Figure, tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]]:
     """Create figure with two subplots sharing the y-axis
     and a specified width ratio.
@@ -2607,6 +2660,8 @@ def plot_split_axes(
     Returns:
         tuple: Figure and axes objects (fig, (ax1, ax2))
     """
+    _apply_jacs_style(fontsize=fontsize)
+
     colors = [
         "#4C72B0",
         "#DD8452",
@@ -2665,9 +2720,10 @@ def plot_split_axes(
             fit_x[:pt_split_fit],
             fit_y[:pt_split_fit],
             color=color,
+            linewidth=1.0,
             label=fit_label if fit_label else "Fit",
         )
-        ax2.plot(fit_x[pt_split_fit:], fit_y[pt_split_fit:], color=color)
+        ax2.plot(fit_x[pt_split_fit:], fit_y[pt_split_fit:], color=color, linewidth=1.0)
         ax1.set_xlim(-0.5, time_split)
         ax2.set_xlim(time_split, fit_x[-1])
 
@@ -2698,8 +2754,8 @@ def plot_split_axes(
     ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)  # type: ignore
 
     # Add horizontal line at y=0
-    ax1.axhline(0, color="black", linewidth=0.5, zorder=0)
-    ax2.axhline(0, color="black", linewidth=0.5, zorder=0)
+    ax1.axhline(0, color="black", linewidth=JACS_LINE_WIDTH, zorder=0)
+    ax2.axhline(0, color="black", linewidth=JACS_LINE_WIDTH, zorder=0)
 
     # Add labels and title
     if title:
@@ -2708,10 +2764,12 @@ def plot_split_axes(
     ax2.set_xlabel(xlabel, fontsize=fontsize)
     ax2.xaxis.set_label_coords(0.2, -0.1)
     ax1.set_ylabel(ylabel, fontsize=fontsize)
+    _style_axis_for_jacs(ax1, fontsize=fontsize)
+    _style_axis_for_jacs(ax2, fontsize=fontsize)
 
     # Add legend if labels were provided
     if label or fit_label:
-        ax2.legend(loc="best", fontsize=fontsize)
+        ax2.legend(loc="best", fontsize=fontsize, frameon=False)
 
     return fig, (ax1, ax2)
 
