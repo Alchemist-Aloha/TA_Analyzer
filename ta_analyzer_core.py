@@ -782,10 +782,15 @@ class glotaran_output:
         xlabel: str | None = None,
         ylabel: str | None = None,
         legend_loc: str | None = None,
+        xlim: tuple[float, float] | None = None,
+        ylim: tuple[float, float] | None = None,
     ) -> None:
         _apply_jacs_style(fontsize=fontsize)
         # Load the DAS and traces data
         self.das = np.loadtxt(self.filename + "_DAS.ascii", skiprows=1)
+        if xlim is not None:
+            xmin = find_closest_value([xlim[0]], self.das[:,0])[0]
+            xmax = find_closest_value([xlim[1]], self.das[:,0])[0]
         self.fig_das, self.ax_das = plt.subplots(figsize=figsize)
         self.fig_das.subplots_adjust(left=0.2)
 
@@ -804,8 +809,8 @@ class glotaran_output:
                 continue
             else:
                 self.ax_das.plot(
-                    self.das[:, 2 * i],
-                    self.das[:, 2 * i + 1],
+                    self.das[xmin:xmax, 2 * i],
+                    self.das[xmin:xmax, 2 * i + 1],
                     label=(
                         "Long-term"
                         if 1 / self.rate_array[i] > 10000.0
@@ -831,11 +836,16 @@ class glotaran_output:
                 else:
                     self.ax_das.set_ylabel("DAS", fontsize=fontsize)
                 # print(self.das[:,i], self.das[:,i+1])
+
         self.ax_das.axhline(y=0, c="black", linewidth=JACS_LINE_WIDTH, zorder=0)
         _style_axis_for_jacs(self.ax_das, fontsize=fontsize)
+        self.ax_das.set_xlim(xlim)
+        self.ax_das.autoscale(axis='y')
+        self.ax_das.set_ylim(ylim)
+
         if save:
             self.fig_das.savefig(
-                self.filename + "_DAS.svg", dpi=1200, bbox_inches="tight", format="svg"
+                self.filename + "_DAS.svg",format="svg"
             )
 
         # Load and plot the das trace data
@@ -1008,6 +1018,7 @@ class glotaran_output:
             _style_axis_for_jacs(self.ax_kin_fit1, fontsize=fontsize, legend=False)
             _style_axis_for_jacs(self.ax_kin_fit2, fontsize=fontsize)
 
+
         # self.fig_kin_fit.suptitle(
         #     f"{self.glotaran_matrix_dir.stem.replace('_', ' ')} - Kinetic & Fits",
         #     fontsize=10,
@@ -1017,8 +1028,6 @@ class glotaran_output:
             self.fig_kin_fit.savefig(
                 Path(self.filename + "_globalfit_trace").with_suffix(".svg"),
                 format="svg",
-                dpi=1200,
-                bbox_inches="tight",
             )
         plt.plot()
 
@@ -1617,6 +1626,10 @@ class tamatrix_importer:
         _apply_jacs_style(fontsize=fontsize)
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
+        if xlim is not None:
+            xmin = find_closest_value(xlim[0], self.tawavelength) 
+            xmax = find_closest_value(xlim[1], self.tawavelength)
+            
         rainbow = colormaps["rainbow"]
         colors = rainbow(np.linspace(1, 0, len(time_index)))
         cmap = ListedColormap(colors)
@@ -1627,8 +1640,8 @@ class tamatrix_importer:
             spec = matrix[:, time_index[i]]
             self.spectra_set = np.c_[self.spectra_set, spec]
             ax.plot(
-                self.tawavelength,
-                spec,
+                self.tawavelength[xmin:xmax],
+                spec[xmin:xmax],
                 label="{:.2f}".format(self.tatime[time_index[i]]) + " ps",
                 color=cmap(i),
                 linewidth=1.0,
@@ -2682,20 +2695,25 @@ def plot_split_axes(
     # Find the split point index in the data
     if x is not None:
         pt_split = np.searchsorted(x, time_split)
+        pt_min = np.searchsorted(x, -0.5)  # Find the index for the minimum time point (0.5 ps)
     else:
         pt_split = 0  # Provide a default value for pt_split
+        pt_min = 0  # Provide a default value for pt_min
+
     if fit_x is not None:
         pt_split_fit = np.searchsorted(fit_x, time_split)
+        pt_fit_min = np.searchsorted(fit_x, -0.5)  # Find the index for the minimum time point (0.5 ps)
     else:
         pt_split_fit = 0  # Provide a default value for pt_split_fit
+        pt_fit_min = 0  # Provide a default value for pt_fit_min
     ax1 = axs_tuple[0]
     ax2 = axs_tuple[1]
 
     if x is not None and y is not None:
         # Plot data points
         ax1.scatter(
-            x[:pt_split],
-            y[:pt_split],
+            x[pt_min:pt_split],
+            y[pt_min:pt_split],
             marker="o",
             alpha=0.5,
             s=20,
@@ -2720,8 +2738,8 @@ def plot_split_axes(
     # Plot fit curve if provided
     if fit_x is not None and fit_y is not None:
         ax1.plot(
-            fit_x[:pt_split_fit],
-            fit_y[:pt_split_fit],
+            fit_x[pt_fit_min:pt_split_fit],
+            fit_y[pt_fit_min:pt_split_fit],
             color=color,
             linewidth=1.0,
             label=fit_label if fit_label else "Fit",
