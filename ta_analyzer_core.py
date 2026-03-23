@@ -1627,8 +1627,8 @@ class tamatrix_importer:
         # find closest time points
         time_index = find_closest_value(time_pts, self.tatime)
         if xlim is not None:
-            xmin = find_closest_value(xlim[0], self.tawavelength) 
-            xmax = find_closest_value(xlim[1], self.tawavelength)
+            xmin = find_closest_value([xlim[0]], self.tawavelength)[0]
+            xmax = find_closest_value([xlim[1]], self.tawavelength)[0]
             
         rainbow = colormaps["rainbow"]
         colors = rainbow(np.linspace(1, 0, len(time_index)))
@@ -1656,7 +1656,7 @@ class tamatrix_importer:
         ax.relim()
         ax.autoscale_view(scalex=False, scaley=True)
         ax.set_ylim(ylim)
-        ax.legend(loc="best", ncol=2, fontsize=max(fontsize - 1, 6), frameon=False)
+        ax.legend(loc="best", ncol=2, fontsize=max(fontsize - 3, 5), frameon=False)
         if save:
             fig.savefig(
                 self.filename.with_name("s_" + self.filestem).with_suffix(".svg"),
