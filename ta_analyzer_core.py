@@ -1653,8 +1653,7 @@ class tamatrix_importer:
         ax.set_xlabel("Wavelength (nm)", fontsize=fontsize)
         ax.set_ylabel("ΔOD", fontsize=fontsize)
         ax.set_xlim(xlim)
-        ax.relim()
-        ax.autoscale_view(scalex=False, scaley=True)
+        # ax.autoscale_view(scalex=False, scaley=True)
         ax.set_ylim(ylim)
         ax.legend(loc="best", ncol=2, fontsize=max(fontsize - 3, 5), frameon=False)
         if save:
