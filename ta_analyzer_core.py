@@ -894,7 +894,7 @@ class glotaran_output:
                     self.ax_traces.yaxis.tick_left()
                     self.ax_traces.tick_params(labelright=False)
                     self.ax_traces_2.tick_params(axis="y", labelleft=False)
-                    self.ax_traces_2.yaxis.tick_right()
+                    # self.ax_traces_2.yaxis.tick_right()
                     d = 0.5  # proportion of vertical to horizontal extent of the slanted line
                     kwargs = dict(
                         marker=[(-1, -d), (1, d)],
@@ -2757,7 +2757,7 @@ def plot_split_axes(
     ax1.yaxis.tick_left()
     ax1.tick_params(labelright=False)
     ax2.tick_params(axis="y", labelleft=False)
-    ax2.yaxis.tick_right()
+    # ax2.yaxis.tick_right()
 
     # Add diagonal break lines to show the discontinuity
     d = 0.5  # proportion of vertical to horizontal extent of the slanted line
