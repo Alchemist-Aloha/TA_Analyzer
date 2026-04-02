@@ -1652,16 +1652,17 @@ class tamatrix_importer:
         ax.axhline(0, color="black", linestyle="-", linewidth=JACS_LINE_WIDTH)
         ax.set_xlabel("Wavelength (nm)", fontsize=fontsize)
         ax.set_ylabel("ΔOD", fontsize=fontsize)
+
+        ax.legend(loc="best", ncol=2, fontsize=max(fontsize - 3, 5), frameon=False)
+        ax.set_autoscale_on(False)
         ax.set_xlim(xlim)
         # ax.autoscale_view(scalex=False, scaley=True)
         ax.set_ylim(ylim)
-        ax.legend(loc="best", ncol=2, fontsize=max(fontsize - 3, 5), frameon=False)
+        
         if save:
             fig.savefig(
                 self.filename.with_name("s_" + self.filestem).with_suffix(".svg"),
-                format="svg",
-                dpi=1200,
-                bbox_inches="tight",
+                format="svg"
             )
         fig.show()
         return self.spectra_set, time_index
